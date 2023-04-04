@@ -12,9 +12,31 @@ namespace AutoBattle
         {
             get
             {
-                var index = CharacterIndex.ToString();
-                var id = IsPlayerCharacter ? $"P{index}" : $"E{index}";
+                var index = CharacterIndex.ToString();                
+                var id = CharacterClass switch
+                {
+                    CharacterClass.Paladin => "P",
+                    CharacterClass.Warrior => "W",
+                    CharacterClass.Cleric => "C",
+                    CharacterClass.Archer => "A",
+                    _ => "X",
+                };
+
+                id += index;
                 return id;
+            }
+        }
+
+        public string FullName
+        {
+            get
+            {
+                var prefix = IsPlayerCharacter ? "[Player] " : "[Enemy] ";
+                var className = Enum.GetName(typeof(CharacterClass), this.CharacterClass);
+                var order = $" ({CharacterIndex} | ";
+                var hp = $"HP: {Health})";
+
+                return prefix + className + order + hp;
             }
         }
         public float Health;
@@ -24,9 +46,13 @@ namespace AutoBattle
         public GridBox currentBox;
         public int CharacterIndex;
         public bool IsPlayerCharacter;
-        public Character Target { get; set; } 
-        public Character(CharacterClass characterClass, bool isPlayerCharacter = false)
+        public bool IsDead;
+        public Character Target { get; set; }
+
+        private Grid battlefield;
+        public Character(Grid grid, CharacterClass characterClass, bool isPlayerCharacter = false)
         {
+            battlefield = grid;
             Health = 100;
             BaseDamage = 20;
             CharacterClass = characterClass;
@@ -47,7 +73,8 @@ namespace AutoBattle
 
         public bool TakeDamage(float amount)
         {
-            if((Health -= amount) <= 0)
+            Health -= amount;
+            if (Health <= 0)
             {
                 Die();
                 return true;
@@ -57,17 +84,15 @@ namespace AutoBattle
 
         public void Die()
         {
-            //TODO >> maybe kill him?
+            IsDead = true;
+            var index = currentBox.Index;
+            currentBox.occupiedBy = null;
+            battlefield.grids[index] = currentBox;            
         }
 
-        public void WalkTO(bool CanWalk)
+        public void Move()
         {
-
-        }
-
-        public void Move(Grid battlefield)
-        {
-            var nextBox = GetNextBox(battlefield);
+            var nextBox = GetNextBox();
 
             currentBox.occupiedBy = null;
             battlefield.grids[currentBox.Index] = currentBox;
@@ -79,7 +104,7 @@ namespace AutoBattle
             battlefield.DrawBattlefield();
         }
 
-        private GridBox GetNextBox(Grid battlefield)
+        private GridBox GetNextBox()
         {
             var targetBox = Target.currentBox;
             var desiredIndex = 0;
@@ -92,7 +117,8 @@ namespace AutoBattle
 
                 if (position.isValid)
                 {
-                    Console.WriteLine($"{Name} walked left\n");
+                    WriteFullName();
+                    Console.WriteLine($" walked left.\n");
                     return position.box;
                 }
             } 
@@ -104,11 +130,13 @@ namespace AutoBattle
 
                 if (position.isValid)
                 {
-                    Console.WriteLine($"{Name} walked right\n");
+                    WriteFullName();    
+                    Console.WriteLine($" walked right.\n");
                     return position.box;
                 }
             }
 
+            // Move Up
             if (currentBox.yIndex > targetBox.yIndex)
             {
                 desiredIndex = currentBox.yIndex - 1;
@@ -116,17 +144,21 @@ namespace AutoBattle
 
                 if (position.isValid)
                 {
-                    Console.WriteLine($"{Name} walked up\n");
+                    WriteFullName();
+                    Console.WriteLine($" walked up.\n");
                     return position.box;
                 }
-            } else if (currentBox.yIndex < targetBox.yIndex)
+            } 
+            // Move Down
+            else if (currentBox.yIndex < targetBox.yIndex)
             {
                 desiredIndex = currentBox.yIndex + 1;
                 var position = GetPositionY(battlefield, desiredIndex);
 
                 if (position.isValid)
                 {
-                    Console.WriteLine($"{Name} walked down\n");
+                    WriteFullName();
+                    Console.WriteLine($" walked down.\n");
                     return position.box;
                 }
             }
@@ -150,19 +182,18 @@ namespace AutoBattle
             return (position, !position.Occupied);
         }
 
-        public void StartTurn(Grid battlefield)
+        public void StartTurn()
         {
+            if (IsDead) return;
 
             if (CheckCloseTargets(battlefield)) 
             {
                 Attack(Target);
-                
-
                 return;
             }
             else
             {   // if there is no target close enough, calculates in wich direction this character should move to be closer to a possible target
-                Move(battlefield);                
+                Move();                
             }
         }
 
@@ -185,9 +216,24 @@ namespace AutoBattle
         {
             var rand = new Random();
             var damage = rand.Next(0, (int)BaseDamage);
-            target.TakeDamage(damage);            
-            Console.WriteLine($"{Name} is attacking the player {Target.Name} and did {damage} damage\n");
+            var targetKilled = target.TakeDamage(damage);                        
+
+            var description = targetKilled ? " just KILLED " : " is attacking ";
+            var damageDescription = targetKilled ? $" with a final blow of {damage} damage!\n": $" and did {damage} damage.\n";
+
+            WriteFullName();
+            Console.Write(description);
+            Target.WriteFullName();
+            Console.Write(damageDescription);
             
+        }
+
+        private void WriteFullName() 
+        {
+            var consoleColor = IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
+            Console.ForegroundColor = consoleColor;
+            Console.Write(FullName);
+            Console.ResetColor();
         }
     }
 }

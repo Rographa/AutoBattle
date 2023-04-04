@@ -85,7 +85,7 @@ namespace AutoBattle
                
                 CharacterClass characterClass = (CharacterClass)classIndex;
                 Console.WriteLine($"Player Class Choice: {characterClass}");
-                PlayerCharacter = new Character(characterClass, true);                
+                PlayerCharacter = new Character(grid, characterClass, true);                
                 CreateEnemyCharacter();
 
             }
@@ -97,19 +97,20 @@ namespace AutoBattle
                 int randomInteger = rand.Next(1, 4);
                 CharacterClass enemyClass = (CharacterClass)randomInteger;
                 Console.WriteLine($"Enemy Class Choice: {enemyClass}");
-                EnemyCharacter = new Character(enemyClass);                                
+                EnemyCharacter = new Character(grid, enemyClass);                                
                 StartGame();
 
             }
 
             void StartGame()
             {
-                SetTurnOrder();
-                //populates the character variables and targets
                 EnemyCharacter.Target = PlayerCharacter;
                 PlayerCharacter.Target = EnemyCharacter;
                 AllPlayers.Add(PlayerCharacter);
                 AllPlayers.Add(EnemyCharacter);
+                SetTurnOrder();
+                //populates the character variables and targets
+                
                 AlocatePlayers();
                 StartTurn();
 
@@ -137,7 +138,7 @@ namespace AutoBattle
 
                 foreach(Character character in AllPlayers)
                 {
-                    character.StartTurn(grid);
+                    character.StartTurn();
                 }
 
                 currentTurn++;
@@ -146,14 +147,19 @@ namespace AutoBattle
 
             void HandleTurn()
             {
-                if(PlayerCharacter.Health == 0)
-                {
-                    return;
-                } else if (EnemyCharacter.Health == 0)
+                if(PlayerCharacter.IsDead)
                 {
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
-                    // endgame?
+                    Console.WriteLine("Defeat...");
+
+                    Console.Write(Environment.NewLine + Environment.NewLine);
+                    return;
+                } else if (EnemyCharacter.IsDead)
+                {
+                    Console.Write(Environment.NewLine + Environment.NewLine);
+
+                    Console.WriteLine("Victory!");
 
                     Console.Write(Environment.NewLine + Environment.NewLine);
 

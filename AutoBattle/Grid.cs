@@ -45,10 +45,10 @@ namespace AutoBattle
             {
                 for (int j = 0; j < xLength; j++)
                 {
-                    GridBox currentgrid = grids.Find(box => box.xIndex == j && box.yIndex == i);
-                    if (currentgrid.Occupied)
+                    GridBox currentBox = grids.Find(box => box.xIndex == j && box.yIndex == i);
+                    if (currentBox.Occupied)
                     {
-                        var character = currentgrid.occupiedBy;
+                        var character = currentBox.occupiedBy;
                         var consoleColor = character.IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
                         Console.ForegroundColor = consoleColor;
                         Console.Write($"[{character.Name}]\t");
@@ -56,7 +56,7 @@ namespace AutoBattle
                     }
                     else
                     {
-                        Console.Write($"[{currentgrid.Index}]\t");
+                        Console.Write($"[{currentBox.Index}]\t");
                     }
                 }
                 Console.Write(Environment.NewLine + Environment.NewLine);
