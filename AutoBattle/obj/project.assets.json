@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Raphael Gobi\\Documents\\Kokku Test\\AutoBattle\\AutoBattle\\AutoBattle.csproj",
+      "projectUniqueName": "C:\\Users\\Raphael Gobi\\AutoBattle\\AutoBattle\\AutoBattle.csproj",
       "projectName": "AutoBattle",
-      "projectPath": "C:\\Users\\Raphael Gobi\\Documents\\Kokku Test\\AutoBattle\\AutoBattle\\AutoBattle.csproj",
+      "projectPath": "C:\\Users\\Raphael Gobi\\AutoBattle\\AutoBattle\\AutoBattle.csproj",
       "packagesPath": "C:\\Users\\Raphael Gobi\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Raphael Gobi\\Documents\\Kokku Test\\AutoBattle\\AutoBattle\\obj\\",
+      "outputPath": "C:\\Users\\Raphael Gobi\\AutoBattle\\AutoBattle\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Raphael Gobi\\AppData\\Roaming\\NuGet\\NuGet.Config",

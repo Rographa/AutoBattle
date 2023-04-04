@@ -8,41 +8,55 @@ namespace AutoBattle
 {
     public class Grid
     {
+        public GridBox RandomUnoccupiedGridBox 
+        {
+            get 
+            {
+                var list = grids.FindAll(box => !box.Occupied);
+                var random = new Random();
+                int index = random.Next(list.Count - 1);
+                return list[index];
+            }
+        }
         public List<GridBox> grids = new List<GridBox>();
-        public int xLenght;
+        public int xLength;
         public int yLength;
         public Grid(int Lines, int Columns)
         {
-            xLenght = Lines;
+            xLength = Lines;
             yLength = Columns;
-            Console.WriteLine("The battle field has been created\n");
+            Console.WriteLine("The battlefield has been created\n");
             for (int i = 0; i < Lines; i++)
-            {
-                    grids.Add(newBox);
+            {                    
                 for(int j = 0; j < Columns; j++)
                 {
-                    GridBox newBox = new GridBox(j, i, false, (Columns * i + j));
+                    GridBox newBox = new GridBox(i, j, null, (Columns * i + j));
+                    grids.Add(newBox);
                     Console.Write($"{newBox.Index}\n");
                 }
+                
             }
         }
 
         // prints the matrix that indicates the tiles of the battlefield
-        public void drawBattlefield(int Lines, int Columns)
+        public void DrawBattlefield()
         {
-            for (int i = 0; i < Lines; i++)
+            for (int i = 0; i < yLength; i++)
             {
-                for (int j = 0; j < Columns; j++)
+                for (int j = 0; j < xLength; j++)
                 {
-                    GridBox currentgrid = new GridBox();
-                    if (currentgrid.ocupied)
+                    GridBox currentgrid = grids.Find(box => box.xIndex == j && box.yIndex == i);
+                    if (currentgrid.Occupied)
                     {
-                        //if()
-                        Console.Write("[X]\t");
+                        var character = currentgrid.occupiedBy;
+                        var consoleColor = character.IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
+                        Console.ForegroundColor = consoleColor;
+                        Console.Write($"[{character.Name}]\t");
+                        Console.ResetColor();
                     }
                     else
                     {
-                        Console.Write($"[ ]\t");
+                        Console.Write($"[{currentgrid.Index}]\t");
                     }
                 }
                 Console.Write(Environment.NewLine + Environment.NewLine);
