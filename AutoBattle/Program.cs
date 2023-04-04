@@ -118,13 +118,21 @@ namespace AutoBattle
 
             void SetTurnOrder()
             {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("ROLLING FOR INITIATIVE...");
+                Console.ResetColor();
+
                 Random rnd = new Random();
                 AllPlayers = AllPlayers.OrderBy(x => rnd.Next()).ToList();
+                Console.WriteLine(" -- Turn Order -- ");
                 for (var i = 0; i < AllPlayers.Count; i++)
                 {
                     var character = AllPlayers[i];
-                    character.CharacterIndex = i;
+                    character.CharacterIndex = i + 1;
+                    character.WriteFullName();
+                    Console.Write(Environment.NewLine);
                 }
+                Console.Write(Environment.NewLine);
             }
 
             void StartTurn(){

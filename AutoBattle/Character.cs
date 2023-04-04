@@ -228,7 +228,7 @@ namespace AutoBattle
             
         }
 
-        private void WriteFullName() 
+        public void WriteFullName() 
         {
             var consoleColor = IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
             Console.ForegroundColor = consoleColor;
