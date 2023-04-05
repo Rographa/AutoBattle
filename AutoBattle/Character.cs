@@ -182,6 +182,20 @@ namespace AutoBattle
             return (position, !position.Occupied);
         }
 
+        public double CalculateDistance(Character other)
+        {
+            var boxIndex = currentBox.Index;
+            var enemyBoxIndex = other.currentBox.Index;
+
+            var x = boxIndex / battlefield.yLength;
+            var y = boxIndex % battlefield.yLength;
+
+            var otherX = enemyBoxIndex / battlefield.yLength;
+            var otherY = enemyBoxIndex % battlefield.yLength;
+
+            return Math.Sqrt(Math.Pow(otherX - x, 2) + Math.Pow(otherY - y, 2));
+        }
+
         public void StartTurn()
         {
             if (IsDead) return;
@@ -200,10 +214,10 @@ namespace AutoBattle
         // Check in x and y directions if there is any character close enough to be a target.
         bool CheckCloseTargets(Grid battlefield)
         {
-            bool left = (battlefield.grids.Find(x => x.Index == currentBox.Index - battlefield.yLength).Occupied);
-            bool right = (battlefield.grids.Find(x => x.Index == currentBox.Index + battlefield.yLength).Occupied);
-            bool up = (battlefield.grids.Find(x => x.Index == currentBox.Index - 1).Occupied);
-            bool down = (battlefield.grids.Find(x => x.Index == currentBox.Index + 1).Occupied);
+            bool left = (battlefield.grids.Find(x => x.Index == currentBox.Index - battlefield.yLength).occupiedBy == Target);
+            bool right = (battlefield.grids.Find(x => x.Index == currentBox.Index + battlefield.yLength).occupiedBy == Target);
+            bool up = (battlefield.grids.Find(x => x.Index == currentBox.Index - 1).occupiedBy == Target);
+            bool down = (battlefield.grids.Find(x => x.Index == currentBox.Index + 1).occupiedBy == Target);
 
             if (left || right || up || down) 
             {
