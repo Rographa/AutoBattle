@@ -9,11 +9,10 @@ namespace AutoBattle
 
         public struct CharacterClassSpecific
         {
-            CharacterClass CharacterClass;
-            float hpModifier;
-            float ClassDamage;
-            CharacterSkills[] skills;
-
+            public CharacterClass CharacterClass;
+            public float hpModifier;
+            public float damageModifier;
+            public List<CharacterSkills> skills;
         }
 
         public struct GridBox
@@ -34,12 +33,44 @@ namespace AutoBattle
 
         }
 
+        public struct Effect
+        {
+            public string Name;
+            public int Duration;
+            public int Damage;
+            public List<AppliableConditions> AppliableConditions;
+        }
+
         public struct CharacterSkills
         {
-            string Name;
-            float damage;
-            float damageMultiplier;
+            public string Name;
+            public int minDamage;
+            public int maxDamage;
+            public float chance;
+            public SkillType skillType;
+            public SkillTarget skillTarget;
+            public List<Effect> effects;
         }
+
+        public struct AppliableConditions
+        {
+            public Conditions Condition;
+            public float Chance;
+        }
+
+        public struct CharacterCapabilities
+        {
+            public bool CanAttack;
+            public bool CanMove;
+            public bool CanCast;
+        }
+
+        public static CharacterCapabilities DefaultCapabilities = new CharacterCapabilities()
+        {
+            CanAttack = true,
+            CanMove = true,
+            CanCast = true
+        };
 
         public enum CharacterClass : uint
         {
@@ -47,6 +78,21 @@ namespace AutoBattle
             Warrior = 2,
             Cleric = 3,
             Archer = 4
+        }
+
+        public enum SkillType
+        {
+            MeleeAttack, RangedAttack, Support
+        }
+
+        public enum SkillTarget
+        {
+            EnemyTarget, Self, Ally 
+        }
+
+        public enum Conditions
+        {
+            None, Stun, Disarm, Cripple, Bleed, Silence
         }
 
     }

@@ -4,6 +4,7 @@ using static AutoBattle.Grid;
 using System.Collections.Generic;
 using System.Linq;
 using static AutoBattle.Types;
+using System.Collections.ObjectModel;
 
 namespace AutoBattle
 {
@@ -15,6 +16,7 @@ namespace AutoBattle
             List<Character> PlayerCharacters = new List<Character>(); 
             List<Character> EnemyCharacters = new List<Character>(); 
             List<Character> AllPlayers = new List<Character>();
+            List<CharacterClassSpecific> Classes = new List<CharacterClassSpecific>();
             int currentTurn = 0;
             int partySize;
 
@@ -23,6 +25,7 @@ namespace AutoBattle
             void Setup()
             {
                 GetBattlefieldSize();
+                SetupCharacterClasses();
                 GetPlayerChoices();
                 GenerateEnemies();
                 StartGame();
@@ -53,6 +56,7 @@ namespace AutoBattle
                 grid = new Grid(width, height);
 
             }
+
             int numberOfPossibleTiles = grid.grids.Count;
 
             void GetPlayerChoices()

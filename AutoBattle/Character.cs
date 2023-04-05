@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using static AutoBattle.Types;
+using System.Collections.ObjectModel;
 
 namespace AutoBattle
 {
@@ -26,7 +27,6 @@ namespace AutoBattle
                 return id;
             }
         }
-
         public string FullName
         {
             get
@@ -41,12 +41,14 @@ namespace AutoBattle
         }
         public float Health;
         public float BaseDamage;
+        public CharacterCapabilities Capabilities;
         public CharacterClass CharacterClass;
         public float DamageMultiplier { get; set; }
         public GridBox currentBox;
         public int CharacterIndex;
         public bool IsPlayerCharacter;
         public bool IsDead;
+        
         public Character Target { get; set; }
 
         private Grid battlefield;
@@ -57,6 +59,7 @@ namespace AutoBattle
             BaseDamage = 20;
             CharacterClass = characterClass;
             IsPlayerCharacter = isPlayerCharacter;
+            Capabilities = DefaultCapabilities;
         }
 
         public void SetIndex(int index)
@@ -70,6 +73,10 @@ namespace AutoBattle
             currentBox = box;
         }
 
+        public void ApplyEffect(Effect effect)
+        {
+
+        }
 
         public bool TakeDamage(float amount)
         {
@@ -249,5 +256,56 @@ namespace AutoBattle
             Console.Write(FullName);
             Console.ResetColor();
         }
+
+        public static CharacterClassSpecific PaladinClass;
+        public static CharacterClassSpecific WarriorClass;
+        public static CharacterClassSpecific ClericClass;
+        public static CharacterClassSpecific ArcherClass;
+
+        public static List<CharacterSkills> PaladinSkills;
+        public static List<CharacterSkills> WarriorSkills;
+        public static List<CharacterSkills> ClericSkills;
+        public static List<CharacterSkills> ArcherSkills;       
+
+        public static void SetupCharacterClasses()
+        {
+            PaladinSkills = new List<CharacterSkills>()
+            {
+                new CharacterSkills()
+                {
+                    Name = "Holy Wrath",
+                    minDamage = 12,
+                    maxDamage = 20,
+                    chance = 0.2f,
+                    skillType = SkillType.MeleeAttack,
+                    skillTarget = SkillTarget.EnemyTarget
+                },
+                new CharacterSkills()
+                {
+                    Name = "Healing Nova",
+                    minDamage = 8,
+                    maxDamage = 14,
+                    chance = 0.3f,
+                    skillType = SkillType.Support
+                }
+            };
+
+            WarriorSkills = new List<CharacterSkills>()
+            {
+                new CharacterSkills()
+                {
+
+                }
+            };
+
+            PaladinClass = new CharacterClassSpecific()
+            {
+                CharacterClass = CharacterClass.Paladin,
+                hpModifier = 1.5f,
+                damageModifier = 1.2f,
+                skills = new List<CharacterSkills>(Character.PaladinSkills.ToList())
+            };
+        }
+
     }
 }
