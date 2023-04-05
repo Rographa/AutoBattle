@@ -9,6 +9,8 @@ namespace AutoBattle
 {
     public class Character
     {
+        public const int RangedAttackDistance = 2;
+
         public string Name 
         {
             get
@@ -111,16 +113,14 @@ namespace AutoBattle
 
         public void AddEffect(Effect effect)
         {
-            CurrentEffects.Add(effect);
-            return;
-
-            if (!CurrentEffects.Any(ef => ef.Name == effect.Name)) 
+            if (effect.Stackable || !CurrentEffects.Any(ef => ef.Name == effect.Name)) 
             {
-                
+                CurrentEffects.Add(effect);
+                return;
             }
 
             var existingEffect = CurrentEffects.FirstOrDefault(ef => ef.Name == effect.Name);
-
+            existingEffect.Duration = effect.Duration;
         }
 
         public bool TakeDamage(int amount)
@@ -149,6 +149,11 @@ namespace AutoBattle
 
         public void Move()
         {
+            if (!Capabilities.CanMove)
+            {                
+                return;
+            }
+
             var nextBox = GetNextBox();
 
             currentBox.occupiedBy = null;
@@ -222,52 +227,25 @@ namespace AutoBattle
 
             return currentBox;
         }
-
-        private (GridBox box, bool isValid) GetPositionX(Grid battlefield, int index)
-        {
-            if (!battlefield.grids.Exists(x => x.xIndex == index && x.yIndex == currentBox.yIndex)) return (currentBox, !currentBox.Occupied);
-
-            var position = battlefield.grids.Find(x => x.xIndex == index && x.yIndex == currentBox.yIndex);
-            return (position, !position.Occupied);
-        }
-
-        private (GridBox box, bool isValid) GetPositionY(Grid battlefield, int index)
-        {
-            if (!battlefield.grids.Exists(x => x.yIndex == index && x.xIndex == currentBox.xIndex)) return (currentBox, !currentBox.Occupied);
-
-            var position = battlefield.grids.Find(x => x.yIndex == index && x.xIndex == currentBox.xIndex);
-            return (position, !position.Occupied);
-        }
-
-        public double CalculateDistance(Character other)
-        {
-            var boxIndex = currentBox.Index;
-            var enemyBoxIndex = other.currentBox.Index;
-
-            var x = boxIndex / battlefield.yLength;
-            var y = boxIndex % battlefield.yLength;
-
-            var otherX = enemyBoxIndex / battlefield.yLength;
-            var otherY = enemyBoxIndex % battlefield.yLength;
-
-            return Math.Sqrt(Math.Pow(otherX - x, 2) + Math.Pow(otherY - y, 2));
-        }
-
         public void StartTurn()
         {
             if (IsDead) return;
 
             CheckEffects();
+            if (IsDead || Capabilities.IsStunned) return;
 
-            if (IsDead) return;
-            if (CheckCloseTargets(battlefield)) 
+            if (!TryCastingSupportSkills())
             {
-                if (!TryCastingMeleeSkills()) Attack(Target);
-                return;
-            }
-            else
-            {   // if there is no target close enough, calculates in wich direction this character should move to be closer to a possible target
-                Move();                
+                if (CheckCloseTargets(battlefield))
+                {
+                    if (!TryCastingMeleeSkills()) Attack(Target);
+                    return;
+                }
+                else
+                {   
+                    if (!TryCastingRangedSkills()) Move();                    
+
+                }
             }
         }
 
@@ -276,12 +254,45 @@ namespace AutoBattle
             Capabilities.CanAttack = true;
             Capabilities.CanMove = true;
             Capabilities.CanCast = true;
+            Capabilities.IsStunned = false;
 
             CurrentEffects.RemoveAll((ef) =>
             {
-                if (ef.Duration == 0) return true;
-
+                if (ef.Duration <= 0) 
+                {
+                    foreach (var condition in ef.AppliableConditions)
+                    {
+                        switch (condition)
+                        {
+                            case Conditions.Stun:
+                                WriteFullName();
+                                Console.Write($" is no longer stunned.\n");                                
+                                break;
+                            case Conditions.Disarm:
+                                WriteFullName();
+                                Console.Write($" is no longer disarmed.\n");                                
+                                break;
+                            case Conditions.Cripple:
+                                WriteFullName();
+                                Console.Write($" is no longer crippled.\n");                                
+                                break;
+                            case Conditions.Silence:
+                                WriteFullName();
+                                Console.Write($" is no longer silenced.\n");                                
+                                break;
+                            case Conditions.Bleed:
+                                WriteFullName();
+                                Console.Write($" is no longer bleeding.\n");
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    return true;
+                }
+                var index = CurrentEffects.IndexOf(ef);
                 ef.Duration--;
+                CurrentEffects[index] = ef;
                 foreach (var condition in ef.AppliableConditions)
                 {
                     switch (condition)
@@ -289,9 +300,7 @@ namespace AutoBattle
                         case Conditions.Stun:
                             WriteFullName();
                             Console.Write($" is stunned.\n");
-                            Capabilities.CanAttack = false;
-                            Capabilities.CanCast = false;
-                            Capabilities.CanMove = false;
+                            Capabilities.IsStunned = true;
                             break;
                         case Conditions.Disarm:
                             WriteFullName();
@@ -309,16 +318,15 @@ namespace AutoBattle
                             Capabilities.CanCast = false;
                             break;                        
                         case Conditions.Bleed:
-
                             WriteFullName();
                             if (TakeDamage(ef.Damage)) Console.Write($" bled to death.\n");
-                            else Console.Write($" is bleeding and took {ef.Damage} damage.\n");
-                            
+                            else Console.Write($" is bleeding and took {ef.Damage} damage.\n");                            
                             break;
                         default:
                             break;
                     }
                 }
+                
 
                 return false;
             });
@@ -327,6 +335,11 @@ namespace AutoBattle
         private bool TryCastingMeleeSkills()
         {
             if (MeleeAttackSkills.Count == 0) return false;
+
+            if (!Capabilities.CanCast)
+            {                
+                return false;
+            }            
 
             var rand = new Random();
             var randomSkill = MeleeAttackSkills[rand.Next(0, MeleeAttackSkills.Count)];
@@ -340,11 +353,88 @@ namespace AutoBattle
                     targets.Add(Target);
                     break;                
                 case SkillTarget.Area:
-                    targets.AddRange(GetEnemiesAround());
+                    targets.AddRange(GetCharactersAround());
                     break;
                 default:
                     break;
             }
+            if (targets.Count == 0) return false;
+
+            ExecuteSkill(randomSkill, targets);
+            return true;
+        }
+
+        private bool TryCastingRangedSkills()
+        {
+            if (RangedAttackSkills.Count == 0) return false;
+
+            if (!Capabilities.CanCast)
+            {                
+                return false;
+            }            
+
+            var rand = new Random();
+            var randomSkill = RangedAttackSkills[rand.Next(0, RangedAttackSkills.Count)];
+
+            if (!EvaluateChance(randomSkill.chance)) return false;
+
+            List<Character> targets = new List<Character>();
+            var targetInRange = Math.Round(CalculateDistance(Target)) <= RangedAttackDistance;
+            if (!targetInRange) return false;
+
+            switch (randomSkill.skillTarget)
+            {
+                case SkillTarget.EnemyTarget:
+                    targets.Add(Target);
+                    break;
+                case SkillTarget.Area:
+                    targets.Add(Target);
+                    targets.AddRange(Target.GetCharactersAround());
+                    break;
+                default:
+                    break;
+            }
+
+            if (targets.Count == 0) return false;
+
+            ExecuteSkill(randomSkill, targets);
+            return true;
+        }
+
+        private bool TryCastingSupportSkills()
+        {
+            if (SupportSkills.Count == 0) return false;
+
+            if (!Capabilities.CanCast)
+            {                
+                return false;
+            }
+
+            var rand = new Random();
+            var randomSkill = SupportSkills[rand.Next(0, SupportSkills.Count)];
+
+            if (!EvaluateChance(randomSkill.chance)) return false;
+
+            List<Character> targets = new List<Character>();
+            var allies = GetAlliesAround();
+            switch (randomSkill.skillTarget)
+            {
+                case SkillTarget.Self:
+                    targets.Add(this);
+                    break;
+                case SkillTarget.Ally:
+                    if (allies.Count > 0)
+                        targets.Add(allies[rand.Next(0, allies.Count)]);
+                    break;
+                case SkillTarget.Area:
+                    if (allies.Count > 0)
+                        targets.AddRange(allies);
+                    break;
+                default:
+                    break;
+            }
+
+            if (targets.Count == 0) return false;
 
             ExecuteSkill(randomSkill, targets);
             return true;
@@ -394,7 +484,7 @@ namespace AutoBattle
             return chance >= rand.NextDouble();
         }
 
-        private List<Character> GetEnemiesAround()
+        private List<Character> GetCharactersAround()
         {
             var list = new List<Character>
             {
@@ -412,6 +502,30 @@ namespace AutoBattle
             {
                 var element = list[i];
                 if (element == null)
+                    list.RemoveAt(i);
+            }
+
+            return list;
+        }
+
+        private List<Character> GetAlliesAround()
+        {
+            var list = new List<Character>
+            {
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength + 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength + 1).occupiedBy,
+            };
+
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                var element = list[i];
+                if (element == null || element.IsPlayerCharacter != IsPlayerCharacter)
                     list.RemoveAt(i);
             }
 
@@ -436,10 +550,15 @@ namespace AutoBattle
             if (list.Any(box => box.occupiedBy == Target))
                 return true;            
             return false; 
-        }
+        }       
 
         public void Attack (Character target)
         {
+            if (!Capabilities.CanAttack)
+            {                
+                return;
+            }
+
             var rand = new Random();
             var damage = (int)Math.Round(rand.Next(0, (int)BaseDamage) * DamageMultiplier);
             var targetKilled = target.TakeDamage(damage);                        
@@ -465,6 +584,36 @@ namespace AutoBattle
             Console.ForegroundColor = consoleColor;
             Console.Write(FullName);
             Console.ResetColor();
+        }
+
+        private (GridBox box, bool isValid) GetPositionX(Grid battlefield, int index)
+        {
+            if (!battlefield.grids.Exists(x => x.xIndex == index && x.yIndex == currentBox.yIndex)) return (currentBox, !currentBox.Occupied);
+
+            var position = battlefield.grids.Find(x => x.xIndex == index && x.yIndex == currentBox.yIndex);
+            return (position, !position.Occupied);
+        }
+
+        private (GridBox box, bool isValid) GetPositionY(Grid battlefield, int index)
+        {
+            if (!battlefield.grids.Exists(x => x.yIndex == index && x.xIndex == currentBox.xIndex)) return (currentBox, !currentBox.Occupied);
+
+            var position = battlefield.grids.Find(x => x.yIndex == index && x.xIndex == currentBox.xIndex);
+            return (position, !position.Occupied);
+        }
+
+        public double CalculateDistance(Character other)
+        {
+            var boxIndex = currentBox.Index;
+            var enemyBoxIndex = other.currentBox.Index;
+
+            var x = boxIndex / battlefield.yLength;
+            var y = boxIndex % battlefield.yLength;
+
+            var otherX = enemyBoxIndex / battlefield.yLength;
+            var otherY = enemyBoxIndex % battlefield.yLength;
+
+            return Math.Sqrt(Math.Pow(otherX - x, 2) + Math.Pow(otherY - y, 2));
         }
 
         public static CharacterClassSpecific PaladinClass;

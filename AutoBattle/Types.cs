@@ -39,6 +39,7 @@ namespace AutoBattle
             public int Duration;
             public int Damage;
             public float Chance;
+            public bool Stackable;
             public List<Conditions> AppliableConditions;
         }
 
@@ -58,6 +59,7 @@ namespace AutoBattle
             public bool CanAttack;
             public bool CanMove;
             public bool CanCast;
+            public bool IsStunned;
         }       
 
         public enum CharacterClass : uint
@@ -87,7 +89,8 @@ namespace AutoBattle
         {
             CanAttack = true,
             CanMove = true,
-            CanCast = true
+            CanCast = true,
+            IsStunned = false
         };
 
         #region Default Effects
@@ -98,6 +101,7 @@ namespace AutoBattle
             Damage = 0,
             Duration = 1,
             Chance = 0.4f,
+            Stackable = false,
             AppliableConditions = new List<Conditions>()
             {
                 Conditions.Stun
@@ -110,6 +114,7 @@ namespace AutoBattle
             Damage = 0,
             Duration = 1,
             Chance = 0.5f,
+            Stackable = false,
             AppliableConditions = new List<Conditions>()
             {
                 Conditions.Disarm
@@ -122,6 +127,7 @@ namespace AutoBattle
             Damage = 2,
             Duration = 1,
             Chance = 0.7f,
+            Stackable = false,
             AppliableConditions = new List<Conditions>()
             {
                 Conditions.Cripple
@@ -134,6 +140,7 @@ namespace AutoBattle
             Damage = 5,
             Duration = 3,
             Chance = 1f,
+            Stackable = true,
             AppliableConditions = new List<Conditions>()
             {
                 Conditions.Bleed
@@ -146,6 +153,7 @@ namespace AutoBattle
             Damage = 0,
             Duration = 2,
             Chance = 0.8f,
+            Stackable = false,
             AppliableConditions = new List<Conditions>()
             {      
                 Conditions.Silence,
