@@ -38,7 +38,8 @@ namespace AutoBattle
             public string Name;
             public int Duration;
             public int Damage;
-            public List<AppliableConditions> AppliableConditions;
+            public float Chance;
+            public List<Conditions> AppliableConditions;
         }
 
         public struct CharacterSkills
@@ -52,25 +53,12 @@ namespace AutoBattle
             public List<Effect> effects;
         }
 
-        public struct AppliableConditions
-        {
-            public Conditions Condition;
-            public float Chance;
-        }
-
         public struct CharacterCapabilities
         {
             public bool CanAttack;
             public bool CanMove;
             public bool CanCast;
-        }
-
-        public static CharacterCapabilities DefaultCapabilities = new CharacterCapabilities()
-        {
-            CanAttack = true,
-            CanMove = true,
-            CanCast = true
-        };
+        }       
 
         public enum CharacterClass : uint
         {
@@ -87,7 +75,7 @@ namespace AutoBattle
 
         public enum SkillTarget
         {
-            EnemyTarget, Self, Ally 
+            EnemyTarget, Self, Ally, Area
         }
 
         public enum Conditions
@@ -95,5 +83,75 @@ namespace AutoBattle
             None, Stun, Disarm, Cripple, Bleed, Silence
         }
 
+        public static CharacterCapabilities DefaultCapabilities = new CharacterCapabilities()
+        {
+            CanAttack = true,
+            CanMove = true,
+            CanCast = true
+        };
+
+        #region Default Effects
+
+        public static Effect StunEffect = new Effect()
+        {
+            Name = "Stun",
+            Damage = 0,
+            Duration = 1,
+            Chance = 0.4f,
+            AppliableConditions = new List<Conditions>()
+            {
+                Conditions.Stun
+            }
+        };
+
+        public static Effect DisarmEffect = new Effect()
+        {
+            Name = "Disarm",
+            Damage = 0,
+            Duration = 1,
+            Chance = 0.5f,
+            AppliableConditions = new List<Conditions>()
+            {
+                Conditions.Disarm
+            }
+        };
+
+        public static Effect CrippleEffect = new Effect()
+        {
+            Name = "Cripple",
+            Damage = 2,
+            Duration = 1,
+            Chance = 0.7f,
+            AppliableConditions = new List<Conditions>()
+            {
+                Conditions.Cripple
+            }
+        };
+
+        public static Effect BleedEffect = new Effect()
+        {
+            Name = "Bleed",
+            Damage = 5,
+            Duration = 3,
+            Chance = 1f,
+            AppliableConditions = new List<Conditions>()
+            {
+                Conditions.Bleed
+            }
+        };
+
+        public static Effect SilenceEffect = new Effect()
+        {
+            Name = "Silence",
+            Damage = 0,
+            Duration = 2,
+            Chance = 0.8f,
+            AppliableConditions = new List<Conditions>()
+            {      
+                Conditions.Silence,
+            }
+        };
+
+        #endregion
     }
 }

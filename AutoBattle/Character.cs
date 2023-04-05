@@ -39,8 +39,9 @@ namespace AutoBattle
                 return prefix + className + order + hp;
             }
         }
-        public float Health;
-        public float BaseDamage;
+        public int Health;
+        public int MaxHealth;
+        public int BaseDamage;
         public CharacterCapabilities Capabilities;
         public CharacterClass CharacterClass;
         public float DamageMultiplier { get; set; }
@@ -48,7 +49,13 @@ namespace AutoBattle
         public int CharacterIndex;
         public bool IsPlayerCharacter;
         public bool IsDead;
-        
+
+        public List<CharacterSkills> MeleeAttackSkills = new List<CharacterSkills>();
+        public List<CharacterSkills> RangedAttackSkills = new List<CharacterSkills>();
+        public List<CharacterSkills> SupportSkills = new List<CharacterSkills>();
+
+        public List<Effect> CurrentEffects = new List<Effect>();
+
         public Character Target { get; set; }
 
         private Grid battlefield;
@@ -56,10 +63,30 @@ namespace AutoBattle
         {
             battlefield = grid;
             Health = 100;
-            BaseDamage = 20;
+            BaseDamage = 10;
             CharacterClass = characterClass;
             IsPlayerCharacter = isPlayerCharacter;
             Capabilities = DefaultCapabilities;
+            SetupClassData();
+        }
+
+        private void SetupClassData()
+        {
+            var classData = CharacterClass switch
+            {
+                CharacterClass.Paladin => PaladinClass,
+                CharacterClass.Warrior => WarriorClass,
+                CharacterClass.Cleric => ClericClass,
+                CharacterClass.Archer => ArcherClass,
+                _ => throw new NotImplementedException(),
+            };
+
+            MaxHealth = Health = (int)(Health * classData.hpModifier);
+            DamageMultiplier = classData.damageModifier;
+            MeleeAttackSkills = classData.skills.Where(skill => skill.skillType == SkillType.MeleeAttack).ToList();
+            RangedAttackSkills = classData.skills.Where(skill => skill.skillType == SkillType.RangedAttack).ToList();
+            SupportSkills = classData.skills.Where(skill => skill.skillType == SkillType.Support).ToList();
+
         }
 
         public void SetIndex(int index)
@@ -73,12 +100,30 @@ namespace AutoBattle
             currentBox = box;
         }
 
-        public void ApplyEffect(Effect effect)
+        public void ApplyEffects(Character target, List<Effect> effects)
+        {            
+            foreach (Effect effect in effects)
+            {
+                if (!EvaluateChance(effect.Chance)) continue;
+                target.AddEffect(effect);
+            }
+        }
+
+        public void AddEffect(Effect effect)
         {
+            CurrentEffects.Add(effect);
+            return;
+
+            if (!CurrentEffects.Any(ef => ef.Name == effect.Name)) 
+            {
+                
+            }
+
+            var existingEffect = CurrentEffects.FirstOrDefault(ef => ef.Name == effect.Name);
 
         }
 
-        public bool TakeDamage(float amount)
+        public bool TakeDamage(int amount)
         {
             Health -= amount;
             if (Health <= 0)
@@ -87,6 +132,11 @@ namespace AutoBattle
                 return true;
             }
             return false;
+        }
+
+        public void Heal(int amount)
+        {
+            Health = Math.Clamp(Health + amount, 1, MaxHealth);
         }
 
         public void Die()
@@ -207,9 +257,12 @@ namespace AutoBattle
         {
             if (IsDead) return;
 
+            CheckEffects();
+
+            if (IsDead) return;
             if (CheckCloseTargets(battlefield)) 
             {
-                Attack(Target);
+                if (!TryCastingMeleeSkills()) Attack(Target);
                 return;
             }
             else
@@ -218,35 +271,192 @@ namespace AutoBattle
             }
         }
 
+        private void CheckEffects()
+        {
+            Capabilities.CanAttack = true;
+            Capabilities.CanMove = true;
+            Capabilities.CanCast = true;
+
+            CurrentEffects.RemoveAll((ef) =>
+            {
+                if (ef.Duration == 0) return true;
+
+                ef.Duration--;
+                foreach (var condition in ef.AppliableConditions)
+                {
+                    switch (condition)
+                    {
+                        case Conditions.Stun:
+                            WriteFullName();
+                            Console.Write($" is stunned.\n");
+                            Capabilities.CanAttack = false;
+                            Capabilities.CanCast = false;
+                            Capabilities.CanMove = false;
+                            break;
+                        case Conditions.Disarm:
+                            WriteFullName();
+                            Console.Write($" is disarmed.\n");
+                            Capabilities.CanAttack = false;                            
+                            break;
+                        case Conditions.Cripple:
+                            WriteFullName();
+                            Console.Write($" is crippled.\n");
+                            Capabilities.CanMove = false;
+                            break;
+                        case Conditions.Silence:
+                            WriteFullName();
+                            Console.Write($" is silenced.\n");
+                            Capabilities.CanCast = false;
+                            break;                        
+                        case Conditions.Bleed:
+
+                            WriteFullName();
+                            if (TakeDamage(ef.Damage)) Console.Write($" bled to death.\n");
+                            else Console.Write($" is bleeding and took {ef.Damage} damage.\n");
+                            
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                return false;
+            });
+        }
+
+        private bool TryCastingMeleeSkills()
+        {
+            if (MeleeAttackSkills.Count == 0) return false;
+
+            var rand = new Random();
+            var randomSkill = MeleeAttackSkills[rand.Next(0, MeleeAttackSkills.Count)];
+
+            if (!EvaluateChance(randomSkill.chance)) return false;
+
+            List<Character> targets = new List<Character>();
+            switch (randomSkill.skillTarget)
+            {
+                case SkillTarget.EnemyTarget:
+                    targets.Add(Target);
+                    break;                
+                case SkillTarget.Area:
+                    targets.AddRange(GetEnemiesAround());
+                    break;
+                default:
+                    break;
+            }
+
+            ExecuteSkill(randomSkill, targets);
+            return true;
+        }
+
+        private void ExecuteSkill(CharacterSkills skill, List<Character> targets)
+        {
+            var rand = new Random();
+            string description;
+            string damageDescription;
+            foreach (var target in targets)
+            {
+                int damage = (int)Math.Round(rand.Next(skill.minDamage, skill.maxDamage) * DamageMultiplier);
+
+                switch (skill.skillType)
+                {
+                    case SkillType.MeleeAttack:
+                    case SkillType.RangedAttack:
+                        if (target.TakeDamage(damage))
+                        {
+                            description = $" used his skill, {skill.Name} on ";
+                            damageDescription = $" and it turned him to ashes. He's gone.\n";
+                        }
+                        else
+                        {
+                            description = $" used his skill, {skill.Name} on ";
+                            damageDescription = $" dealing {damage} damage.\n";
+                        }
+                        break;                    
+                    case SkillType.Support:
+                        target.Heal(damage);                        
+                        description = $" used his skill, {skill.Name} on ";
+                        damageDescription = $" and healed him in {damage} health points.\n";                        
+                        break;
+                    default:
+                        continue;
+                }                
+
+                WriteAttackText(target, description, damageDescription);
+                ApplyEffects(target, skill.effects);
+            }
+        }
+
+        private bool EvaluateChance(float chance)
+        {
+            var rand = new Random();
+            return chance >= rand.NextDouble();
+        }
+
+        private List<Character> GetEnemiesAround()
+        {
+            var list = new List<Character>
+            {
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength + 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength - 1).occupiedBy,
+                battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength + 1).occupiedBy,
+            };
+
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                var element = list[i];
+                if (element == null)
+                    list.RemoveAt(i);
+            }
+
+            return list;
+        }
+
         // Check in x and y directions if there is any character close enough to be a target.
         bool CheckCloseTargets(Grid battlefield)
         {
-            bool left = (battlefield.grids.Find(x => x.Index == currentBox.Index - battlefield.yLength).occupiedBy == Target);
-            bool right = (battlefield.grids.Find(x => x.Index == currentBox.Index + battlefield.yLength).occupiedBy == Target);
-            bool up = (battlefield.grids.Find(x => x.Index == currentBox.Index - 1).occupiedBy == Target);
-            bool down = (battlefield.grids.Find(x => x.Index == currentBox.Index + 1).occupiedBy == Target);
+            var list = new List<GridBox>();
 
-            if (left || right || up || down) 
-            {
-                return true;
-            }
+            var leftGridBox = battlefield.grids.Find(box => box.Index == currentBox.Index - battlefield.yLength);
+            var rightGridBox = battlefield.grids.Find(box => box.Index == currentBox.Index + battlefield.yLength);
+            var upGridBox = battlefield.grids.Find(box => box.Index == currentBox.Index - 1 && box.xIndex == currentBox.xIndex);
+            var downGridBox = battlefield.grids.Find(box => box.Index == currentBox.Index + 1 && box.xIndex == currentBox.xIndex);
+
+            list.Add(leftGridBox);
+            list.Add(rightGridBox);
+            list.Add(upGridBox);
+            list.Add(downGridBox);
+
+            if (list.Any(box => box.occupiedBy == Target))
+                return true;            
             return false; 
         }
 
         public void Attack (Character target)
         {
             var rand = new Random();
-            var damage = rand.Next(0, (int)BaseDamage);
+            var damage = (int)Math.Round(rand.Next(0, (int)BaseDamage) * DamageMultiplier);
             var targetKilled = target.TakeDamage(damage);                        
 
             var description = targetKilled ? " just KILLED " : " is attacking ";
             var damageDescription = targetKilled ? $" with a final blow of {damage} damage!\n": $" and did {damage} damage.\n";
 
+            WriteAttackText(target, description, damageDescription);
+            
+        }
+
+        public void WriteAttackText(Character target, string description, string damageDescription)
+        {
             WriteFullName();
             Console.Write(description);
-            Target.WriteFullName();
+            target.WriteFullName();
             Console.Write(damageDescription);
-            
         }
 
         public void WriteFullName() 
@@ -278,7 +488,11 @@ namespace AutoBattle
                     maxDamage = 20,
                     chance = 0.2f,
                     skillType = SkillType.MeleeAttack,
-                    skillTarget = SkillTarget.EnemyTarget
+                    skillTarget = SkillTarget.EnemyTarget,
+                    effects = new List<Effect>()
+                    {
+                        StunEffect
+                    }
                 },
                 new CharacterSkills()
                 {
@@ -286,7 +500,9 @@ namespace AutoBattle
                     minDamage = 8,
                     maxDamage = 14,
                     chance = 0.3f,
-                    skillType = SkillType.Support
+                    skillType = SkillType.Support,
+                    skillTarget = SkillTarget.Area,
+                    effects = new List<Effect>()                    
                 }
             };
 
@@ -294,7 +510,86 @@ namespace AutoBattle
             {
                 new CharacterSkills()
                 {
+                    Name = "Heroic Strike",
+                    minDamage = 12,
+                    maxDamage = 24,
+                    chance = 0.5f,
+                    skillType = SkillType.MeleeAttack,
+                    skillTarget = SkillTarget.EnemyTarget,
+                    effects = new List<Effect>()
+                    {
+                        BleedEffect, DisarmEffect
+                    }
+                },
+                new CharacterSkills()
+                {
+                    Name = "Whirlwind",
+                    minDamage = 10,
+                    maxDamage = 16,
+                    chance = 0.4f,
+                    skillType = SkillType.MeleeAttack,
+                    skillTarget = SkillTarget.Area,
+                    effects = new List<Effect>()
+                    {
+                        BleedEffect
+                    }
+                }
+            };
 
+            ClericSkills = new List<CharacterSkills>()
+            {
+                new CharacterSkills
+                {
+                    Name = "Healing Hands",
+                    minDamage = 8,
+                    maxDamage = 15,
+                    chance = 1f,
+                    skillType = SkillType.Support,
+                    skillTarget = SkillTarget.Ally,
+                    effects= new List<Effect>()                    
+                },
+                new CharacterSkills
+                {
+                    Name = "Divine Blast",
+                    minDamage = 5,
+                    maxDamage = 25,
+                    chance = 0.5f,
+                    skillType = SkillType.RangedAttack,
+                    skillTarget = SkillTarget.EnemyTarget,
+                    effects= new List<Effect>()
+                    {
+                        SilenceEffect
+                    }
+                }
+            };
+
+            ArcherSkills = new List<CharacterSkills>()
+            {
+                new CharacterSkills
+                {
+                    Name = "Crippling Shot",
+                    minDamage = 9,
+                    maxDamage = 14,
+                    chance = 0.8f,
+                    skillType = SkillType.RangedAttack,
+                    skillTarget = SkillTarget.EnemyTarget,
+                    effects= new List<Effect>()
+                    {
+                        CrippleEffect
+                    }
+                },
+                new CharacterSkills
+                {
+                    Name = "Aimed Shot",
+                    minDamage = 15,
+                    maxDamage = 20,
+                    chance = 1f,
+                    skillType = SkillType.RangedAttack,
+                    skillTarget = SkillTarget.EnemyTarget,
+                    effects= new List<Effect>()
+                    {
+                        BleedEffect
+                    }
                 }
             };
 
@@ -303,7 +598,31 @@ namespace AutoBattle
                 CharacterClass = CharacterClass.Paladin,
                 hpModifier = 1.5f,
                 damageModifier = 1.2f,
-                skills = new List<CharacterSkills>(Character.PaladinSkills.ToList())
+                skills = new List<CharacterSkills>(PaladinSkills.ToList())
+            };
+
+            WarriorClass = new CharacterClassSpecific()
+            {
+                CharacterClass = CharacterClass.Warrior,
+                hpModifier = 1.3f,
+                damageModifier = 1.5f,
+                skills = new List<CharacterSkills>(WarriorSkills.ToList())
+            };
+
+            ClericClass = new CharacterClassSpecific()
+            {
+                CharacterClass = CharacterClass.Cleric,
+                hpModifier = 1f,
+                damageModifier = 1.4f,
+                skills = new List<CharacterSkills>(ClericSkills.ToList())
+            };
+
+            ArcherClass = new CharacterClassSpecific()
+            {
+                CharacterClass = CharacterClass.Archer,
+                hpModifier = 1f,
+                damageModifier = 1.6f,
+                skills = new List<CharacterSkills>(ArcherSkills.ToList())
             };
         }
 
