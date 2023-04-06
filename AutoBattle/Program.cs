@@ -152,44 +152,6 @@ namespace AutoBattle
                 enemyCharacters.Add(character);
             }
 
-            void UpdateTargets()
-            {
-                var leastDistance = double.PositiveInfinity;
-                Character currentTarget = null;
-
-                foreach (var enemy in enemyCharacters)
-                {
-                    foreach (var character in playerCharacters)
-                    {
-                        currentTarget ??= character;
-                        var distance = enemy.CalculateDistance(character);
-                        if (distance < leastDistance)
-                        {
-                            leastDistance = distance;
-                            currentTarget = character;
-                        }
-                    }
-                    enemy.Target = currentTarget;
-                }
-
-                currentTarget = null;
-
-                foreach (var character in playerCharacters)
-                {
-                    foreach (var enemy in enemyCharacters)
-                    {
-                        currentTarget ??= enemy;
-                        var distance = character.CalculateDistance(enemy);
-                        if (distance < leastDistance)
-                        {
-                            leastDistance = distance;
-                            currentTarget = enemy;
-                        }
-                    }
-                    character.Target = currentTarget;
-                }
-            }
-
             void StartGame()
             {                
                 allPlayers = playerCharacters.Concat(enemyCharacters).ToList();
@@ -227,7 +189,6 @@ namespace AutoBattle
 
             void StartTurn()
             {
-                UpdateTargets();
                 if (currentTurn == 0)
                 {
                     currentTurn++;
@@ -237,6 +198,7 @@ namespace AutoBattle
 
                 foreach (var character in allPlayers)
                 {
+                    character.UpdateClosestTarget(character.IsPlayerCharacter ? enemyCharacters : playerCharacters);
                     character.StartTurn();
                 }
 

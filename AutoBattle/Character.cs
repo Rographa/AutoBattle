@@ -98,6 +98,25 @@ namespace AutoBattle
             _basicAttackEffects = classData.BasicAttackEffects;
         }
 
+        public void UpdateClosestTarget(List<Character> enemies)
+        {
+            var leastDistance = double.PositiveInfinity;
+            Character currentTarget = null;
+
+            foreach (var enemy in enemies)
+            {
+                currentTarget ??= enemy;
+                var distance = CalculateDistance(enemy);
+                if (distance < leastDistance)
+                {
+                    leastDistance = distance;
+                    currentTarget = enemy;
+                }
+            }
+
+            Target = currentTarget;
+        }
+
         private void ApplyEffects(Character target, List<Effect> effects)
         {
             foreach (var effect in effects.Where(effect => EvaluateChance(effect.Chance)))
@@ -213,64 +232,6 @@ namespace AutoBattle
             WriteFullName();
             Console.WriteLine(direction);
             return nextGridBox;
-            var targetBox = Target.CurrentBox;
-            var desiredIndex = 0;
-            
-            // Move Left
-            if (CurrentBox.XIndex > targetBox.XIndex)
-            {
-                desiredIndex = CurrentBox.XIndex - 1;
-                var position = GetPositionX(_battlefield, desiredIndex);
-
-                if (position.isValid)
-                {
-                    WriteFullName();
-                    Console.WriteLine($" walked left.\n");
-                    return position.box;
-                }
-            } 
-            // Move Right
-            else if (CurrentBox.XIndex < targetBox.XIndex)
-            {
-                desiredIndex = CurrentBox.XIndex + 1;
-                var position = GetPositionX(_battlefield, desiredIndex);
-
-                if (position.isValid)
-                {
-                    WriteFullName();    
-                    Console.WriteLine($" walked right.\n");
-                    return position.box;
-                }
-            }
-
-            // Move Up
-            if (CurrentBox.YIndex > targetBox.YIndex)
-            {
-                desiredIndex = CurrentBox.YIndex - 1;
-                var position = GetPositionY(_battlefield, desiredIndex);
-
-                if (position.isValid)
-                {
-                    WriteFullName();
-                    Console.WriteLine($" walked up.\n");
-                    return position.box;
-                }
-            } 
-            // Move Down
-            else if (CurrentBox.YIndex < targetBox.YIndex)
-            {
-                desiredIndex = CurrentBox.YIndex + 1;
-                var position = GetPositionY(_battlefield, desiredIndex);
-
-                if (position.isValid)
-                {
-                    WriteFullName();
-                    Console.WriteLine($" walked down.\n");
-                    return position.box;
-                }
-            }
-
-            return CurrentBox;
         }
         public void StartTurn()
         {
@@ -590,7 +551,7 @@ namespace AutoBattle
             var targetKilled = target.TakeDamage(damage);                        
 
             var description = targetKilled ? " just KILLED " : " is attacking ";
-            var damageDescription = targetKilled ? $" with a final blow of {damage} damage!\n": $" and did {damage} damage.\n";
+            var damageDescription = targetKilled ? $" with a final blow of {damage} damage!\n": $" and dealt {damage} damage.\n";
             
             WriteAttackText(target, description, damageDescription);
             if (!targetKilled) ApplyEffects(target, _basicAttackEffects);
