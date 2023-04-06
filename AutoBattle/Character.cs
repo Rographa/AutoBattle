@@ -146,7 +146,7 @@ namespace AutoBattle
 
         private bool TakeDamage(int amount)
         {
-            _health -= amount;
+            _health = Math.Clamp(_health - amount, 0, _maxHealth);
             if (_health > 0) return false;
             
             Die();
@@ -250,11 +250,10 @@ namespace AutoBattle
             _capabilities.IsStunned = false;
             _currentEffects.RemoveAll((ef) =>
             {
-                if (ef.Duration <= 0) 
+                if (ef.Duration <= 0)
                 {
-                    foreach (var condition in ef.ApplicableConditions)
+                    foreach (var condition in ef.ApplicableConditions.Where(condition => !HasCondition(condition)))
                     {
-                        if (HasCondition(condition)) continue;
                         switch (condition)
                         {
                             case Conditions.Stun:
@@ -281,6 +280,7 @@ namespace AutoBattle
                                 break;
                         }
                     }
+
                     return true;
                 }
                 var index = _currentEffects.IndexOf(ef);
@@ -450,7 +450,7 @@ namespace AutoBattle
                         if (target.TakeDamage(damage))
                         {
                             description = $" used his skill, {skill.Name} on ";
-                            damageDescription = $" and it turned him to ashes. He's gone.\n";
+                            damageDescription = $" and it turned him into ashes. He's gone.\n";
                         }
                         else
                         {

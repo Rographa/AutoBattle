@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Linq;
 using static AutoBattle.Types;
 
 namespace AutoBattle
@@ -25,7 +23,7 @@ namespace AutoBattle
         {
             XLength = lines;
             YLength = columns;
-            Console.WriteLine("The battlefield has been created\n");
+            
             for (var i = 0; i < lines; i++)
             {                    
                 for(var j = 0; j < columns; j++)
@@ -36,6 +34,7 @@ namespace AutoBattle
                 }
                 
             }
+            Console.WriteLine("The battlefield has been created.\n");
         }
 
         // prints the matrix that indicates the tiles of the battlefield
@@ -56,7 +55,7 @@ namespace AutoBattle
                     }
                     else
                     {
-                        Console.Write($"[{currentBox.Index.ToString()}]\t");
+                        Console.Write($"[  ]\t");
                     }
                 }
                 Console.Write(Environment.NewLine + Environment.NewLine);

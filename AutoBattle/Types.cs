@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace AutoBattle
 {
@@ -29,8 +27,8 @@ namespace AutoBattle
             {
                 XIndex = x;
                 YIndex = y;
-                this.OccupiedBy = occupiedBy;
-                this.Index = index;
+                OccupiedBy = occupiedBy;
+                Index = index;
                 _grid = grid;
                 
             }
