@@ -12,27 +12,27 @@ namespace AutoBattle
         {
             get 
             {
-                var list = grids.FindAll(box => !box.Occupied);
+                var list = Grids.FindAll(box => !box.Occupied);
                 var random = new Random();
-                int index = random.Next(list.Count - 1);
+                var index = random.Next(list.Count - 1);
                 return list[index];
             }
         }
-        public List<GridBox> grids = new List<GridBox>();
-        public int xLength;
-        public int yLength;
-        public Grid(int Lines, int Columns)
+        public readonly List<GridBox> Grids = new List<GridBox>();
+        public readonly int XLength;
+        public readonly int YLength;
+        public Grid(int lines, int columns)
         {
-            xLength = Lines;
-            yLength = Columns;
+            XLength = lines;
+            YLength = columns;
             Console.WriteLine("The battlefield has been created\n");
-            for (int i = 0; i < Lines; i++)
+            for (var i = 0; i < lines; i++)
             {                    
-                for(int j = 0; j < Columns; j++)
+                for(var j = 0; j < columns; j++)
                 {
-                    GridBox newBox = new GridBox(i, j, null, (Columns * i + j));
-                    grids.Add(newBox);
-                    Console.Write($"{newBox.Index}\n");
+                    var newBox = new GridBox(i, j, null, (columns * i + j), this);
+                    Grids.Add(newBox);
+                    Console.Write($"{newBox.Index.ToString()}\n");
                 }
                 
             }
@@ -41,14 +41,14 @@ namespace AutoBattle
         // prints the matrix that indicates the tiles of the battlefield
         public void DrawBattlefield()
         {
-            for (int i = 0; i < yLength; i++)
+            for (var i = 0; i < YLength; i++)
             {
-                for (int j = 0; j < xLength; j++)
+                for (var j = 0; j < XLength; j++)
                 {
-                    GridBox currentBox = grids.Find(box => box.xIndex == j && box.yIndex == i);
+                    var currentBox = Grids.Find(box => box.XIndex == j && box.YIndex == i);
                     if (currentBox.Occupied)
                     {
-                        var character = currentBox.occupiedBy;
+                        var character = currentBox.OccupiedBy;
                         var consoleColor = character.IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
                         Console.ForegroundColor = consoleColor;
                         Console.Write($"[{character.Name}]\t");
@@ -56,7 +56,7 @@ namespace AutoBattle
                     }
                     else
                     {
-                        Console.Write($"[{currentBox.Index}]\t");
+                        Console.Write($"[{currentBox.Index.ToString()}]\t");
                     }
                 }
                 Console.Write(Environment.NewLine + Environment.NewLine);

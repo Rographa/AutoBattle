@@ -4,33 +4,62 @@ using System.Text;
 
 namespace AutoBattle
 {
-    public class Types
+    public static class Types
     {
-
         public struct CharacterClassSpecific
         {
             public CharacterClass CharacterClass;
-            public float hpModifier;
-            public float damageModifier;
-            public List<CharacterSkills> skills;
+            public float HpModifier;
+            public float DamageModifier;
+            public List<CharacterSkills> Skills;
+            public List<Effect> BasicAttackEffects;
         }
 
         public struct GridBox
         {
-            public int xIndex;
-            public int yIndex;
-            public Character occupiedBy;
-            public bool Occupied => occupiedBy != null;
-            public int Index;
-
-            public GridBox(int x, int y, Character occupiedBy, int index)
+            public readonly int XIndex;
+            public readonly int YIndex;
+            public readonly int Index;
+            
+            public Character OccupiedBy;
+            public bool Occupied => OccupiedBy != null;
+            public bool InGrid => _grid != null;
+            private readonly Grid _grid;
+            public GridBox(int x, int y, Character occupiedBy, int index, Grid grid)
             {
-                xIndex = x;
-                yIndex = y;
-                this.occupiedBy = occupiedBy;
+                XIndex = x;
+                YIndex = y;
+                this.OccupiedBy = occupiedBy;
                 this.Index = index;
+                _grid = grid;
+                
             }
-
+            public GridBox Left()
+            {
+                var index = Index;
+                var grid = _grid;
+                return grid != null ? grid.Grids.Find(box => box.Index == index - grid.YLength) : new GridBox();
+            }
+            public GridBox Right()
+            {
+                var index = Index;
+                var grid = _grid;
+                return grid != null ? _grid.Grids.Find(box => box.Index == index + grid.YLength) : new GridBox();
+            }
+            public GridBox Up()
+            {
+                var index = Index;
+                var xIndex = XIndex;
+                var grid = _grid;
+                return grid != null ? _grid.Grids.Find(box => box.Index == index - 1 && box.XIndex == xIndex) : new GridBox();
+            }
+            public GridBox Down()
+            {
+                var index = Index;
+                var xIndex = XIndex;
+                var grid = _grid;
+                return grid != null ? _grid.Grids.Find(box => box.Index == index + 1 && box.XIndex == xIndex) : new GridBox();
+            }
         }
 
         public struct Effect
@@ -40,18 +69,18 @@ namespace AutoBattle
             public int Damage;
             public float Chance;
             public bool Stackable;
-            public List<Conditions> AppliableConditions;
+            public List<Conditions> ApplicableConditions;
         }
 
         public struct CharacterSkills
         {
             public string Name;
-            public int minDamage;
-            public int maxDamage;
-            public float chance;
-            public SkillType skillType;
-            public SkillTarget skillTarget;
-            public List<Effect> effects;
+            public int MinDamage;
+            public int MaxDamage;
+            public float Chance;
+            public SkillType SkillType;
+            public SkillTarget SkillTarget;
+            public List<Effect> Effects;
         }
 
         public struct CharacterCapabilities
@@ -102,7 +131,7 @@ namespace AutoBattle
             Duration = 1,
             Chance = 0.4f,
             Stackable = false,
-            AppliableConditions = new List<Conditions>()
+            ApplicableConditions = new List<Conditions>()
             {
                 Conditions.Stun
             }
@@ -115,7 +144,7 @@ namespace AutoBattle
             Duration = 1,
             Chance = 0.5f,
             Stackable = false,
-            AppliableConditions = new List<Conditions>()
+            ApplicableConditions = new List<Conditions>()
             {
                 Conditions.Disarm
             }
@@ -128,7 +157,7 @@ namespace AutoBattle
             Duration = 1,
             Chance = 0.7f,
             Stackable = false,
-            AppliableConditions = new List<Conditions>()
+            ApplicableConditions = new List<Conditions>()
             {
                 Conditions.Cripple
             }
@@ -141,7 +170,7 @@ namespace AutoBattle
             Duration = 3,
             Chance = 1f,
             Stackable = true,
-            AppliableConditions = new List<Conditions>()
+            ApplicableConditions = new List<Conditions>()
             {
                 Conditions.Bleed
             }
@@ -154,12 +183,65 @@ namespace AutoBattle
             Duration = 2,
             Chance = 0.8f,
             Stackable = false,
-            AppliableConditions = new List<Conditions>()
+            ApplicableConditions = new List<Conditions>()
             {      
                 Conditions.Silence,
             }
         };
 
+        #endregion
+        #region Basic Attack Effects
+        public static Effect BasicAttackDisarmEffect = new Effect()
+        {
+            Name = "Disarm",
+            Damage = 0,
+            Duration = 1,
+            Chance = 0.2f,
+            Stackable = false,
+            ApplicableConditions = new List<Conditions>()
+            {
+                Conditions.Disarm
+            }
+        };
+
+        public static Effect BasicAttackCrippleEffect = new Effect()
+        {
+            Name = "Cripple",
+            Damage = 2,
+            Duration = 1,
+            Chance = 0.15f,
+            Stackable = false,
+            ApplicableConditions = new List<Conditions>()
+            {
+                Conditions.Cripple
+            }
+        };
+
+        public static Effect BasicAttackBleedEffect = new Effect()
+        {
+            Name = "Bleed",
+            Damage = 3,
+            Duration = 2,
+            Chance = 0.3f,
+            Stackable = true,
+            ApplicableConditions = new List<Conditions>()
+            {
+                Conditions.Bleed
+            }
+        };
+
+        public static Effect BasicAttackSilenceEffect = new Effect()
+        {
+            Name = "Silence",
+            Damage = 0,
+            Duration = 2,
+            Chance = 0.4f,
+            Stackable = false,
+            ApplicableConditions = new List<Conditions>()
+            {      
+                Conditions.Silence,
+            }
+        };
         #endregion
     }
 }

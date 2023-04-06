@@ -8,16 +8,16 @@ using System.Collections.ObjectModel;
 
 namespace AutoBattle
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            Grid grid;                        
-            List<Character> PlayerCharacters = new List<Character>(); 
-            List<Character> EnemyCharacters = new List<Character>(); 
-            List<Character> AllPlayers = new List<Character>();
-            List<CharacterClassSpecific> Classes = new List<CharacterClassSpecific>();
-            int currentTurn = 0;
+            Grid grid;
+            var random = new Random();
+            var playerCharacters = new List<Character>(); 
+            var enemyCharacters = new List<Character>(); 
+            var allPlayers = new List<Character>();
+            var currentTurn = 0;
             int partySize;
 
             Setup(); 
@@ -33,31 +33,31 @@ namespace AutoBattle
 
             void GetBattlefieldSize()
             {
-                Console.WriteLine("Choose Battlefield Width: ");
-                string input = Console.ReadLine();
-
-                if (!Int32.TryParse(input, out var width))
+                while (true)
                 {
-                    Console.WriteLine("Invalid parameter.");
-                    GetBattlefieldSize();
-                    return;
+                    Console.WriteLine("Choose Battlefield Width: ");
+                    var input = Console.ReadLine();
+
+                    if (!int.TryParse(input, out var width))
+                    {
+                        Console.WriteLine("Invalid parameter.");
+                        continue;
+                    }
+
+                    Console.WriteLine("Choose Battlefield Height: ");
+                    input = Console.ReadLine();
+
+                    if (!int.TryParse(input, out var height))
+                    {
+                        Console.WriteLine("Invalid parameter.");
+                        continue;
+                    }
+
+                    grid = new Grid(width, height);
+
+                    break;
                 }
-
-                Console.WriteLine("Choose Battlefield Height: ");
-                input = Console.ReadLine();
-
-                if (!Int32.TryParse(input, out var height))
-                {
-                    Console.WriteLine("Invalid parameter.");
-                    GetBattlefieldSize();
-                    return;
-                }
-
-                grid = new Grid(width, height);
-
             }
-
-            int numberOfPossibleTiles = grid.grids.Count;
 
             void GetPlayerChoices()
             {
@@ -67,53 +67,55 @@ namespace AutoBattle
 
             void GetBattleChoice()
             {
-                Console.WriteLine("Choose a type of battle:\n");
-                Console.WriteLine("[1] 1x1, [2] 2x2, [3] 3x3, [4] 4x4");
-                string battleChoice = Console.ReadLine();                
-
-                switch (battleChoice)
+                while (true)
                 {
-                    case "1":
-                        partySize = 1;
-                        break;
-                    case "2":
-                        partySize = 2;
-                        break;
-                    case "3":
-                        partySize = 3;
-                        break;
-                    case "4":
-                        partySize = 4;
-                        break;
-                    default:
-                        GetBattleChoice();
-                        break;
+                    Console.WriteLine("Choose a type of battle:\n");
+                    Console.WriteLine("[1] 1x1, [2] 2x2, [3] 3x3, [4] 4x4");
+                    var battleChoice = Console.ReadLine();
+
+                    switch (battleChoice)
+                    {
+                        case "1":
+                            partySize = 1;
+                            break;
+                        case "2":
+                            partySize = 2;
+                            break;
+                        case "3":
+                            partySize = 3;
+                            break;
+                        case "4":
+                            partySize = 4;
+                            break;
+                        default:
+                            continue;
+                    }
+                    break;
                 }
             }
 
             void GetPlayerCharacters()
             {                
-                for (int i = PlayerCharacters.Count; i < partySize; i++)
+                for (var i = playerCharacters.Count; i < partySize; i++)
                 {
                     //asks for the player to choose between for possible classes via console.
                     Console.WriteLine("Choose Between One of this Classes:\n");
                     Console.WriteLine("[1] Paladin, [2] Warrior, [3] Cleric, [4] Archer");
                     //store the player choice in a variable
-                    string choice = Console.ReadLine();
-
+                    var choice = Console.ReadLine();
                     switch (choice)
                     {
                         case "1":
-                            CreatePlayerCharacter(Int32.Parse(choice));
+                            CreatePlayerCharacter(int.Parse(choice));
                             break;
                         case "2":
-                            CreatePlayerCharacter(Int32.Parse(choice));
+                            CreatePlayerCharacter(int.Parse(choice));
                             break;
                         case "3":
-                            CreatePlayerCharacter(Int32.Parse(choice));
+                            CreatePlayerCharacter(int.Parse(choice));
                             break;
                         case "4":
-                            CreatePlayerCharacter(Int32.Parse(choice));
+                            CreatePlayerCharacter(int.Parse(choice));
                             break;
                         default:
                             GetPlayerCharacters();
@@ -124,7 +126,7 @@ namespace AutoBattle
 
             void GenerateEnemies()
             {
-                for (int i = 0; i < partySize; i++)
+                for (var i = 0; i < partySize; i++)
                 {
                     CreateEnemyCharacter();
                 }
@@ -133,22 +135,21 @@ namespace AutoBattle
             void CreatePlayerCharacter(int classIndex)
             {
                
-                CharacterClass characterClass = (CharacterClass)classIndex;
+                var characterClass = (CharacterClass)classIndex;
                 Console.WriteLine($"Player Class Choice: {characterClass}");
                 var character = new Character(grid, characterClass, true);
-                PlayerCharacters.Add(character);                
+                playerCharacters.Add(character);                
 
             }
 
             void CreateEnemyCharacter()
             {
                 //randomly choose the enemy class and set up vital variables
-                var rand = new Random();
-                int randomInteger = rand.Next(1, 4);
-                CharacterClass enemyClass = (CharacterClass)randomInteger;
+                var randomInteger = random.Next(1, 4);
+                var enemyClass = (CharacterClass)randomInteger;
                 Console.WriteLine($"Enemy Class Choice: {enemyClass}");                
                 var character = new Character(grid, enemyClass);       
-                EnemyCharacters.Add(character);
+                enemyCharacters.Add(character);
             }
 
             void UpdateTargets()
@@ -156,9 +157,9 @@ namespace AutoBattle
                 var leastDistance = double.PositiveInfinity;
                 Character currentTarget = null;
 
-                foreach (var enemy in EnemyCharacters)
+                foreach (var enemy in enemyCharacters)
                 {
-                    foreach (var character in PlayerCharacters)
+                    foreach (var character in playerCharacters)
                     {
                         currentTarget ??= character;
                         var distance = enemy.CalculateDistance(character);
@@ -173,9 +174,9 @@ namespace AutoBattle
 
                 currentTarget = null;
 
-                foreach (var character in PlayerCharacters)
+                foreach (var character in playerCharacters)
                 {
-                    foreach (var enemy in EnemyCharacters)
+                    foreach (var enemy in enemyCharacters)
                     {
                         currentTarget ??= enemy;
                         var distance = character.CalculateDistance(enemy);
@@ -191,7 +192,7 @@ namespace AutoBattle
 
             void StartGame()
             {                
-                AllPlayers = PlayerCharacters.Concat(EnemyCharacters).ToList();
+                allPlayers = playerCharacters.Concat(enemyCharacters).ToList();
                 SetTurnOrder();                                
                 StartBattleInput();
             }
@@ -201,20 +202,18 @@ namespace AutoBattle
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ROLLING FOR INITIATIVE...");
                 Console.ResetColor();
-
-                Random rnd = new Random();
-                AllPlayers = AllPlayers.OrderBy(x => rnd.Next()).ToList();
+                
+                allPlayers = allPlayers.OrderBy(x => random.Next()).ToList();
                 Console.WriteLine(" -- Turn Order -- ");
-                for (var i = 0; i < AllPlayers.Count; i++)
+                for (var i = 0; i < allPlayers.Count; i++)
                 {
-                    var character = AllPlayers[i];
+                    var character = allPlayers[i];
                     character.CharacterIndex = i + 1;
                     character.WriteFullName();
                     Console.Write(Environment.NewLine);
                 }
                 Console.Write(Environment.NewLine);
-
-                AlocatePlayers();
+                AllocatePlayers();
             }
 
             void StartBattleInput()
@@ -222,8 +221,7 @@ namespace AutoBattle
                 Console.Write(Environment.NewLine + Environment.NewLine);
                 Console.WriteLine("Press any key to start the battle!\n");
                 Console.Write(Environment.NewLine + Environment.NewLine);
-
-                ConsoleKeyInfo key = Console.ReadKey();
+                var key = Console.ReadKey();
                 StartTurn();
             }
 
@@ -237,7 +235,7 @@ namespace AutoBattle
                     return;
                 }
 
-                foreach(Character character in AllPlayers)
+                foreach (var character in allPlayers)
                 {
                     character.StartTurn();
                 }
@@ -250,7 +248,7 @@ namespace AutoBattle
             {
                 UpdateCharacters();
 
-                if(PlayerCharacters.Count == 0)
+                if(playerCharacters.Count == 0)
                 {
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
@@ -258,7 +256,8 @@ namespace AutoBattle
 
                     Console.Write(Environment.NewLine + Environment.NewLine);
                     return;
-                } else if (EnemyCharacters.Count == 0)
+                }
+                if (enemyCharacters.Count == 0)
                 {
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
@@ -267,62 +266,52 @@ namespace AutoBattle
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
                     return;
-                } else
-                {
-                    Console.Write(Environment.NewLine + Environment.NewLine);
-                    Console.WriteLine("Click on any key to start the next turn...\n");
-                    Console.Write(Environment.NewLine + Environment.NewLine);
+                } 
+                
+                Console.Write(Environment.NewLine + Environment.NewLine);
+                Console.WriteLine("Click on any key to start the next turn...\n");
+                Console.Write(Environment.NewLine + Environment.NewLine);
 
-                    ConsoleKeyInfo key = Console.ReadKey();
-                    StartTurn();
-                }
+                var key = Console.ReadKey();
+                StartTurn();
             }
 
             void UpdateCharacters()
             {
-                for (int i = PlayerCharacters.Count - 1; i >= 0; i--)
+                for (var i = playerCharacters.Count - 1; i >= 0; i--)
                 {
-                    var character = PlayerCharacters[i];
+                    var character = playerCharacters[i];
                     if (!character.IsDead) continue;
 
-                    PlayerCharacters.Remove(character);                    
+                    playerCharacters.Remove(character);                    
                 }
 
-                for (int i = EnemyCharacters.Count - 1; i >= 0; i--)
+                for (var i = enemyCharacters.Count - 1; i >= 0; i--)
                 {
-                    var character = EnemyCharacters[i];
+                    var character = enemyCharacters[i];
                     if (!character.IsDead) continue;
 
-                    EnemyCharacters.Remove(character);
+                    enemyCharacters.Remove(character);
                 }
             }
 
-            int GetRandomInt(int min, int max)
+            void AllocatePlayers()
             {
-                var rand = new Random();
-                int index = rand.Next(min, max);
-                return index;
-            }
-
-            void AlocatePlayers()
-            {
-                foreach (Character character in AllPlayers)
+                foreach (var character in allPlayers)
                 {
-                    AlocateCharacter(character);
+                    AllocateCharacter(character);
                 }
                 grid.DrawBattlefield();
             }
 
-            void AlocateCharacter(Character character)
+            void AllocateCharacter(Character character)
             {
-                GridBox RandomLocation = grid.RandomUnoccupiedGridBox;
-                //character.Alocate(RandomLocation);
-                RandomLocation.occupiedBy = character;
-                character.currentBox = RandomLocation;
+                var randomLocation = grid.RandomUnoccupiedGridBox;
+                randomLocation.OccupiedBy = character;
+                character.CurrentBox = randomLocation;
                 
-                int index = RandomLocation.Index;
-                grid.grids[RandomLocation.Index] = RandomLocation;                
-                
+                var index = randomLocation.Index;
+                grid.Grids[index] = randomLocation;
             }
         }
     }
