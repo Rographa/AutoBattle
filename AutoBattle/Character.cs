@@ -174,10 +174,8 @@ namespace AutoBattle
             }
 
             var nextBox = GetNextBox();
-            if (nextBox.Occupied)
-            {
-                nextBox = GetRandomBox();
-            }
+
+            if (nextBox.Index == CurrentBox.Index) return;
             
             CurrentBox.OccupiedBy = null;
             _battlefield.Grids[CurrentBox.Index] = CurrentBox;
@@ -188,16 +186,6 @@ namespace AutoBattle
 
             _battlefield.DrawBattlefield();
         }
-
-        private GridBox GetRandomBox()
-        {
-            var random = new Random();
-            var list = new List<GridBox>(Surroundings);
-            list.RemoveAll(box => box.Occupied);
-
-            return list.Count > 0 ? list[random.Next(0, list.Count)] : CurrentBox;
-        }
-
         private GridBox GetNextBox()
         {
             var list = new List<GridBox>(Surroundings);

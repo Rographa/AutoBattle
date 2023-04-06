@@ -189,13 +189,6 @@ namespace AutoBattle
 
             void StartTurn()
             {
-                if (currentTurn == 0)
-                {
-                    currentTurn++;
-                    HandleTurn();
-                    return;
-                }
-
                 foreach (var character in allPlayers)
                 {
                     character.UpdateClosestTarget(character.IsPlayerCharacter ? enemyCharacters : playerCharacters);
