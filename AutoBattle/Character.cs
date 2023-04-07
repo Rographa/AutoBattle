@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using static AutoBattle.Types;
+using static AutoBattle.Stage;
 
 namespace AutoBattle
 {
@@ -68,9 +69,9 @@ namespace AutoBattle
         public Character Target { get; set; }
 
         private readonly Grid _battlefield;
-        public Character(Grid grid, CharacterClass characterClass, bool isPlayerCharacter = false)
+        public Character(CharacterClass characterClass, bool isPlayerCharacter = false)
         {
-            _battlefield = grid;
+            _battlefield = Stage.Grid;
             _health = 100;
             _baseDamage = 10;
             _characterClass = characterClass;
@@ -229,7 +230,7 @@ namespace AutoBattle
             if (IsDead || _capabilities.IsStunned) return;
 
             if (TryCastingSupportSkills()) return;
-            if (CheckCloseTargets(_battlefield))
+            if (CheckCloseTargets())
             {
                 if (!TryCastingMeleeSkills()) Attack(Target);
                 return;
@@ -322,6 +323,8 @@ namespace AutoBattle
                         default:
                             break;
                     }
+
+                    if (killedByEffect) break;
                 }
                 return false;
             });
@@ -521,7 +524,7 @@ namespace AutoBattle
         }
 
         // Check in x and y directions if there is any character close enough to be a target.
-        private bool CheckCloseTargets(Grid battlefield)
+        private bool CheckCloseTargets()
         {
             var list = new List<GridBox>(Surroundings);
             list.RemoveAll(box => !box.InGrid);

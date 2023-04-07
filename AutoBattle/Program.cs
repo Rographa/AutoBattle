@@ -1,10 +1,10 @@
 ﻿using System;
 using static AutoBattle.Character;
-using static AutoBattle.Grid;
 using static AutoBattle.Input;
 using System.Collections.Generic;
 using System.Linq;
 using static AutoBattle.Types;
+using static AutoBattle.Stage;
 
 namespace AutoBattle
 {
@@ -24,16 +24,21 @@ namespace AutoBattle
 
             void Setup()
             {
+                ShowIntroText();
                 SetupCharacterClasses();
+                grid = SetupBattlefield();
                 GetPlayerChoices();
                 GenerateEnemies();
                 StartGame();
             }
 
+            void ShowIntroText()
+            {
+                Console.WriteLine("Welcome to AutoBattle! Choose a battlefield size, battle type and your team and watch them fight for the victory!");
+            }
+
             void GetPlayerChoices()
             {
-                var size = GetBattlefieldSize();
-                grid = new Grid(size.x, size.y);
                 partySize = GetBattleChoice();
                 for (var i = playerCharacters.Count; i < partySize; i++)
                 {
@@ -54,7 +59,7 @@ namespace AutoBattle
                
                 var characterClass = (CharacterClass)classIndex;
                 Console.WriteLine($"Player Class Choice: {characterClass}");
-                var character = new Character(grid, characterClass, true);
+                var character = new Character(characterClass, true);
                 playerCharacters.Add(character);                
 
             }
@@ -65,7 +70,7 @@ namespace AutoBattle
                 var randomInteger = random.Next(1, 5);
                 var enemyClass = (CharacterClass)randomInteger;
                 Console.WriteLine($"Enemy Class Choice: {enemyClass}");                
-                var character = new Character(grid, enemyClass);       
+                var character = new Character(enemyClass);       
                 enemyCharacters.Add(character);
             }
 
@@ -117,19 +122,24 @@ namespace AutoBattle
                 {
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
-                    Console.WriteLine("Defeat...");
+                    Console.WriteLine("Defeat...\n");
 
                     Console.Write(Environment.NewLine + Environment.NewLine);
+                    
+                    Console.WriteLine("Press any key to close the game.");
+                    var key = Console.ReadKey();
                     return;
                 }
                 if (enemyCharacters.Count == 0)
                 {
                     Console.Write(Environment.NewLine + Environment.NewLine);
 
-                    Console.WriteLine("Victory!");
+                    Console.WriteLine("Victory!\n");
 
                     Console.Write(Environment.NewLine + Environment.NewLine);
-
+                    
+                    Console.WriteLine("Press any key to close the game.");
+                    var key = Console.ReadKey();
                     return;
                 } 
                 
@@ -162,16 +172,6 @@ namespace AutoBattle
                     AllocateCharacter(character);
                 }
                 grid.DrawBattlefield();
-            }
-
-            void AllocateCharacter(Character character)
-            {
-                var randomLocation = grid.RandomUnoccupiedGridBox;
-                randomLocation.OccupiedBy = character;
-                character.CurrentBox = randomLocation;
-                
-                var index = randomLocation.Index;
-                grid.Grids[index] = randomLocation;
             }
         }
     }
