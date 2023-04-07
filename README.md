@@ -1,8 +1,8 @@
 # AutoBattle
 
 ## Rules:
-- Player must select a battlefield size. (e.g. 5x5, 10x8)
-- Player must select a battle type. (e.g. 1vs1, 2vs2)
+- Player must select a battlefield size. _(e.g. 5x5, 10x8)_
+- Player must select a battle type. _(e.g. 1vs1, 2vs2)_
 - Player must select a class for each of him/her/their characters.
 - Opponent will randomly select a class for each character as well.
 - Turn order will be random among all characters and it is set at the beginning of the game.
@@ -77,6 +77,14 @@ _Note: if Character couldn't perform any of its actions, its turn will be skippe
       - Chance : 100%
       - Effects : Bleed (100%, 3t, 5 DMG)
 
+## Effects:
+Effects are used in skills and basic attacks. These are applied ~~(if chance roll succeeds)~~ to targets of these actions. Effects can be stackable, meaning that the Character may suffer its conditions more than once each turn. If the effect is not stackable and the Character receives an existing effect, the effect with higher duration will be kept. 
+  - **Stun:** Affected Character can't perform any actions. Not stackable.
+  - **Disarm:** Affected Character can't attack. Not stackable.
+  - **Cripple:** Affected Character can't move and takes Damage per Turn. Not stackable.
+  - **Bleed:** Affected Character takes Damage per Turn. Stackable.
+  - **Silence:** Affected Character can't cast spells. Not stackable.
+
 ## Tips:
   - If a skill target type is _Area_, it means the skill will target every character **around** that point, not restricted to cardinal directions. 
     - _Example_:
@@ -93,3 +101,4 @@ _Note: if Character couldn't perform any of its actions, its turn will be skippe
   - Support skills **always** have priority over other actions and have the same range as an _Area_ target type. That means if the cleric is adjacent to any of its allies, the cleric will heal the closest one with _Healing Hands_ skill.
   - Characters' targets are updated at the beginning of the correspondent character's turn. It will always select the closest enemy as the target.
   - When there are no valid enemies or allies in range for a skill, the character will try to move. The pathfinding system checks any possible movements for the character (up, down, right, left) and filter them by the least distance to the target.
+
