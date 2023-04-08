@@ -36,16 +36,38 @@ namespace AutoBattle
             {
                 Console.WriteLine("Welcome to AutoBattle! Choose a battlefield size, battle type and your team and watch them fight for the victory!");
             }
-
+            
+            
             void GetPlayerChoices()
             {
+                // First we get the battle type (1x1, 2x2, 3x3, 4x4)
                 partySize = GetBattleChoice();
+                // Then, ask a new input for player to choose a class for each player character and create it.
                 for (var i = playerCharacters.Count; i < partySize; i++)
                 {
                     GetPlayerCharacter(CreatePlayerCharacter);
                 }
             }
 
+            // Create a Character for Player's team, based on class input.
+            void CreatePlayerCharacter(int classIndex)
+            {
+                var characterClass = (CharacterClass)classIndex;
+                Console.WriteLine($"Player Class Choice: {characterClass}");
+                var character = new Character(characterClass, true);
+                playerCharacters.Add(character);
+            }
+
+            void CreateEnemyCharacter()
+            {
+                // Randomly choose the enemy class
+                var randomInteger = random.Next(1, 5);
+                var enemyClass = (CharacterClass)randomInteger;
+                Console.WriteLine($"Enemy Class Choice: {enemyClass}");                
+                var character = new Character(enemyClass);       
+                enemyCharacters.Add(character);
+            }
+            
             void GenerateEnemies()
             {
                 for (var i = 0; i < partySize; i++)
@@ -54,39 +76,21 @@ namespace AutoBattle
                 }
             }
 
-            void CreatePlayerCharacter(int classIndex)
-            {
-               
-                var characterClass = (CharacterClass)classIndex;
-                Console.WriteLine($"Player Class Choice: {characterClass}");
-                var character = new Character(characterClass, true);
-                playerCharacters.Add(character);                
-
-            }
-
-            void CreateEnemyCharacter()
-            {
-                //randomly choose the enemy class and set up vital variables
-                var randomInteger = random.Next(1, 5);
-                var enemyClass = (CharacterClass)randomInteger;
-                Console.WriteLine($"Enemy Class Choice: {enemyClass}");                
-                var character = new Character(enemyClass);       
-                enemyCharacters.Add(character);
-            }
-
             void StartGame()
-            {                
+            {  
+                // Merge both player and enemy character into a unique list.
                 allPlayers = playerCharacters.Concat(enemyCharacters).ToList();
                 SetTurnOrder();                                
                 StartBattleInput(StartTurn);
             }
 
+            // Randomly sorts the turn order for each character.
             void SetTurnOrder()
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ROLLING FOR INITIATIVE...");
                 Console.ResetColor();
-                
+
                 allPlayers = allPlayers.OrderBy(x => random.Next()).ToList();
                 Console.WriteLine(" -- Turn Order -- ");
                 for (var i = 0; i < allPlayers.Count; i++)
@@ -102,12 +106,14 @@ namespace AutoBattle
 
             void StartTurn()
             {
+                // For each character in game, get the closest target and start its turn.
                 foreach (var character in allPlayers)
                 {
                     character.UpdateClosestTarget(character.IsPlayerCharacter ? enemyCharacters : playerCharacters);
                     character.StartTurn();
                 }
-
+                
+                // After all characters' turns, increase the turn number and check victory/defeat.
                 currentTurn++;
                 HandleTurn();
             }
@@ -146,8 +152,11 @@ namespace AutoBattle
                 WaitForNextTurnInput(StartTurn);
             }
 
+            // Checks if a character is dead, and if so, removes it from your original list.
             void UpdateCharacters()
             {
+                // Note: *for* is reversed, so we can modify the list from its last element to the first.
+                
                 for (var i = playerCharacters.Count - 1; i >= 0; i--)
                 {
                     var character = playerCharacters[i];
@@ -165,6 +174,7 @@ namespace AutoBattle
                 }
             }
 
+            // Sets all character into random locations and then draw battlefield.
             void AllocatePlayers()
             {
                 foreach (var character in allPlayers)

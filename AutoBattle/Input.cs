@@ -4,6 +4,7 @@ namespace AutoBattle
 {
     public static class Input
     {
+        // Get Player's input for the size of the battlefield (width and height).
         public static (int x, int y) GetBattlefieldSize()
         {
             while (true)
@@ -30,6 +31,7 @@ namespace AutoBattle
             }
         }
         
+        // Get Player's input for battle choice (size of the party).
         public static int GetBattleChoice()
         {
             while (true)
@@ -54,6 +56,7 @@ namespace AutoBattle
             }
         }
 
+        // Get Player's input for character classes.
         public static void GetPlayerCharacter(Action<int> onCharacterSelectedCallback)
         {
             while (true)

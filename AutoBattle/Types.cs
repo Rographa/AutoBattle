@@ -6,7 +6,6 @@ namespace AutoBattle
     {
         public struct CharacterClassSpecific
         {
-            public CharacterClass CharacterClass;
             public float HpModifier;
             public float DamageModifier;
             public List<CharacterSkills> Skills;
@@ -21,8 +20,12 @@ namespace AutoBattle
             
             public Character OccupiedBy;
             public bool Occupied => OccupiedBy != null;
-            public bool InGrid => _grid != null;
             private readonly Grid _grid;
+            
+            /// <summary>
+            /// InGrid represents if a GridBox was initialized and is contained on Stage.Grid. As GridBox is a struct, its value is never null.
+            /// </summary>
+            public bool InGrid => _grid != null;
             public GridBox(int x, int y, Character occupiedBy, int index, Grid grid)
             {
                 XIndex = x;
@@ -30,8 +33,8 @@ namespace AutoBattle
                 OccupiedBy = occupiedBy;
                 Index = index;
                 _grid = grid;
-                
             }
+            #region Surroundings Getters
             public GridBox Left()
             {
                 var index = Index;
@@ -58,6 +61,7 @@ namespace AutoBattle
                 var grid = _grid;
                 return grid != null ? _grid.Grids.Find(box => box.Index == index + 1 && box.XIndex == xIndex) : new GridBox();
             }
+            #endregion
         }
 
         public struct Effect
@@ -119,7 +123,7 @@ namespace AutoBattle
             CanCast = true,
             IsStunned = false
         };
-
+        // Data from Default Effects, used in skills.
         #region Default Effects
 
         public static Effect StunEffect = new Effect()
@@ -188,6 +192,7 @@ namespace AutoBattle
         };
 
         #endregion
+        // Data from Basic Attack Effects, used in attack action.
         #region Basic Attack Effects
         public static Effect BasicAttackDisarmEffect = new Effect()
         {

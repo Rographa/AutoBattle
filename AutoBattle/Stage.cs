@@ -8,6 +8,7 @@ namespace AutoBattle
         
         public static Grid SetupBattlefield()
         {
+            // Gets player input for battlefield size, create a Grid and returns it.
             var size = GetBattlefieldSize();
             Grid = new Grid(size.x, size.y);
             return Grid;

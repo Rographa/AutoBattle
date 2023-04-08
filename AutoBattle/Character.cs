@@ -8,8 +8,10 @@ namespace AutoBattle
 {
     public class Character
     {
+        // Base Range for all ranged attacks.
         private const int RangedAttackDistance = 2;
 
+        // Getter property for Character's short name.
         public string Name 
         {
             get
@@ -28,6 +30,7 @@ namespace AutoBattle
                 return id;
             }
         }
+        // Getter property for Character's full name.
         public string FullName
         {
             get
@@ -60,12 +63,13 @@ namespace AutoBattle
         private List<Effect> _currentEffects = new List<Effect>();
         private List<Effect> _basicAttackEffects = new List<Effect>();
         
-        private GridBox Left => _battlefield.Grids.Find(box => box.Index == CurrentBox.Index - _battlefield.YLength);
-        private GridBox Right => _battlefield.Grids.Find(box => box.Index == CurrentBox.Index + _battlefield.YLength);
-        private GridBox Up => _battlefield.Grids.Find(box => box.Index == CurrentBox.Index - 1 && box.XIndex == CurrentBox.XIndex);
-        private GridBox Down => _battlefield.Grids.Find(box => box.Index == CurrentBox.Index + 1 && box.XIndex == CurrentBox.XIndex);
-
+        // Getters for all cardinal directions
+        private GridBox Left => CurrentBox.Left();
+        private GridBox Right => CurrentBox.Right();
+        private GridBox Up => CurrentBox.Up();
+        private GridBox Down => CurrentBox.Down();
         private List<GridBox> Surroundings => new List<GridBox>() { Left, Right, Up, Down };
+        
         public Character Target { get; set; }
 
         private readonly Grid _battlefield;
@@ -80,6 +84,7 @@ namespace AutoBattle
             SetupClassData();
         }
 
+        // Sets all attributes and skills based on character's class.
         private void SetupClassData()
         {
             var classData = _characterClass switch
@@ -99,6 +104,7 @@ namespace AutoBattle
             _basicAttackEffects = classData.BasicAttackEffects;
         }
 
+        // Checks the distance for each enemy in battlefield and sets the target to the closest one.
         public void UpdateClosestTarget(List<Character> enemies)
         {
             var leastDistance = double.PositiveInfinity;
@@ -117,9 +123,10 @@ namespace AutoBattle
 
             Target = currentTarget;
         }
-
+        
         private void ApplyEffects(Character target, List<Effect> effects)
         {
+            // Check if effect should be applied to target, and if so, applies it.
             foreach (var effect in effects.Where(effect => EvaluateChance(effect.Chance)))
             {
                 var description = $" applied {effect.Name} to ";
@@ -131,12 +138,14 @@ namespace AutoBattle
 
         private void AddEffect(Effect effect)
         {
+            // If the effect is Stackable or is the first of its type to be added, then it adds it and return.
             if (effect.Stackable || _currentEffects.All(ef => ef.Name != effect.Name)) 
             {
                 _currentEffects.Add(effect);
                 return;
             }
 
+            // Otherwise, try finding the existing effect and the effect with the higher duration is kept.
             var existingEffect = _currentEffects.FirstOrDefault(ef => ef.Name == effect.Name);
             if (effect.Duration <= existingEffect.Duration) return;
             
@@ -145,6 +154,7 @@ namespace AutoBattle
             _currentEffects[index] = existingEffect;
         }
 
+        // Deals damage to character and check if it is dead.
         private bool TakeDamage(int amount)
         {
             _health = Math.Clamp(_health - amount, 0, _maxHealth);
@@ -187,6 +197,8 @@ namespace AutoBattle
 
             _battlefield.DrawBattlefield();
         }
+        
+        // Checks for all cardinal directions to see which one results in the smallest distance to current target.
         private GridBox GetNextBox()
         {
             var list = new List<GridBox>(Surroundings);
@@ -224,11 +236,16 @@ namespace AutoBattle
         }
         public void StartTurn()
         {
+            // If character is dead, its turn is skipped.
             if (IsDead) return;
-
+            
+            // Check all current effects of the character.
             CheckEffects();
+            // If character gets killed by one of these effects or is stunned, it skips its turn.
             if (IsDead || _capabilities.IsStunned) return;
 
+            // Try to execute an action using this priority order: Cast Support Skill, Cast Melee Skill, Attack, Cast Ranged Skill and Move. 
+            // Only one of these actions is going to be executed.
             if (TryCastingSupportSkills()) return;
             if (CheckCloseTargets())
             {
@@ -245,10 +262,13 @@ namespace AutoBattle
 
         private void CheckEffects()
         {
+            // Resets all Capabilities before checking existing effects.
             _capabilities.CanAttack = true;
             _capabilities.CanMove = true;
             _capabilities.CanCast = true;
             _capabilities.IsStunned = false;
+            
+            // Triggers all active effects and remove expired ones.
             _currentEffects.RemoveAll((ef) =>
             {
                 if (ef.Duration <= 0)
@@ -414,6 +434,7 @@ namespace AutoBattle
             if (!EvaluateChance(randomSkill.Chance)) return false;
 
             var targets = new List<Character>();
+            // As support skills have a larger area of effect, gets all allies in a box area around character to determine a target.
             var allies = GetAlliesAround();
             switch (randomSkill.SkillTarget)
             {
@@ -438,6 +459,7 @@ namespace AutoBattle
             return true;
         }
 
+        // Execute a skill, checking its target and if it is supposed to attack or heal one or multiple targets.
         private void ExecuteSkill(CharacterSkills skill, List<Character> targets)
         {
             var rand = new Random();
@@ -526,6 +548,7 @@ namespace AutoBattle
         // Check in x and y directions if there is any character close enough to be a target.
         private bool CheckCloseTargets()
         {
+            // Gets a list of all cardinal directions of the character and remove invalid ones. It returns true if any of these spaces are occupied by character's target.
             var list = new List<GridBox>(Surroundings);
             list.RemoveAll(box => !box.InGrid);
             return list.Any(box => box.OccupiedBy == Target);
@@ -548,6 +571,7 @@ namespace AutoBattle
             if (!targetKilled) ApplyEffects(target, _basicAttackEffects);
         }
 
+        // Used to write combat texts, resulting on writing on console: character's full name, a description of what happened, target's full name and a damage description.
         private void WriteAttackText(Character target, string description, string damageDescription)
         {
             WriteFullName();
@@ -555,6 +579,7 @@ namespace AutoBattle
             target.WriteFullName();
             Console.Write(damageDescription);
         }
+        // Used to write character's full name. Responsible of changing console foreground color, depending if it is a player's character or enemy character.
         public void WriteFullName() 
         {
             var consoleColor = IsPlayerCharacter ? ConsoleColor.Green : ConsoleColor.Red;
@@ -569,23 +594,8 @@ namespace AutoBattle
             return chance >= rand.NextDouble();
         }
 
-        private (GridBox box, bool isValid) GetPositionX(Grid battlefield, int index)
-        {
-            if (!battlefield.Grids.Exists(x => x.XIndex == index && x.YIndex == CurrentBox.YIndex)) return (CurrentBox, !CurrentBox.Occupied);
-
-            var position = battlefield.Grids.Find(x => x.XIndex == index && x.YIndex == CurrentBox.YIndex);
-            return (position, !position.Occupied);
-        }
-
-        private (GridBox box, bool isValid) GetPositionY(Grid battlefield, int index)
-        {
-            if (!battlefield.Grids.Exists(x => x.YIndex == index && x.XIndex == CurrentBox.XIndex)) return (CurrentBox, !CurrentBox.Occupied);
-
-            var position = battlefield.Grids.Find(x => x.YIndex == index && x.XIndex == CurrentBox.XIndex);
-            return (position, !position.Occupied);
-        }
-
-        public double CalculateDistance(Character other)
+        // Calculates the distance between this character and "other" character.
+        private double CalculateDistance(Character other)
         {
             var x = CurrentBox.XIndex;
             var y = CurrentBox.YIndex;
@@ -595,7 +605,8 @@ namespace AutoBattle
             return distance;
         }
 
-        public double CalculateDistance(GridBox box)
+        // Calculates the distance between this character and a specific GridBox.
+        private double CalculateDistance(GridBox box)
         {
             var x = CurrentBox.XIndex;
             var y = CurrentBox.YIndex;
@@ -615,6 +626,7 @@ namespace AutoBattle
         private static List<CharacterSkills> _clericSkills;
         private static List<CharacterSkills> _archerSkills;       
 
+        // Static method responsible on setting the data for all classes and skills.
         public static void SetupCharacterClasses()
         {
             _paladinSkills = new List<CharacterSkills>()
@@ -733,7 +745,6 @@ namespace AutoBattle
 
             _paladinClass = new CharacterClassSpecific()
             {
-                CharacterClass = CharacterClass.Paladin,
                 HpModifier = 1.5f,
                 DamageModifier = 1.2f,
                 Skills = new List<CharacterSkills>(_paladinSkills.ToList()),
@@ -742,7 +753,6 @@ namespace AutoBattle
 
             _warriorClass = new CharacterClassSpecific()
             {
-                CharacterClass = CharacterClass.Warrior,
                 HpModifier = 1.3f,
                 DamageModifier = 1.5f,
                 Skills = new List<CharacterSkills>(_warriorSkills.ToList()),
@@ -751,7 +761,6 @@ namespace AutoBattle
 
             _clericClass = new CharacterClassSpecific()
             {
-                CharacterClass = CharacterClass.Cleric,
                 HpModifier = 1f,
                 DamageModifier = 1.4f,
                 Skills = new List<CharacterSkills>(_clericSkills.ToList()),
@@ -760,7 +769,6 @@ namespace AutoBattle
 
             _archerClass = new CharacterClassSpecific()
             {
-                CharacterClass = CharacterClass.Archer,
                 HpModifier = 1f,
                 DamageModifier = 1.6f,
                 Skills = new List<CharacterSkills>(_archerSkills.ToList()),

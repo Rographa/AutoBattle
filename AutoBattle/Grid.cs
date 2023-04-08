@@ -6,6 +6,7 @@ namespace AutoBattle
 {
     public class Grid
     {
+        // Getter property to automatically get an unoccupied GridBox randomly.
         public GridBox RandomUnoccupiedGridBox 
         {
             get 
