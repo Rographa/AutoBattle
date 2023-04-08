@@ -7,7 +7,7 @@
 - Opponent will randomly select a class for each character as well.
 - Turn order will be random among all characters and it is set at the beginning of the game.
 - Each turn, every character will try to perform up to one action. (Moving, Attacking and Casting Spells are actions.)
-- Player team will automatically fight enemy team until one of those are defeated.
+- Player team will automatically fight enemy team and vice-versa, until one of those are defeated.
 
 ## Actions (in priority order):
 - ### Cast Support Spells:
@@ -98,7 +98,7 @@ Effects are used in skills and basic attacks. These are applied ~~(if chance rol
 
       "C" represents the Character and "X" represents all possible targets for an area skill.
 
-  - Support skills **always** have priority over other actions and have the same range as an _Area_ target type. That means if the cleric is adjacent to any of its allies, the cleric will heal the closest one with _Healing Hands_ skill.
+  - Support skills **always** have priority over other actions and have the same range as an _Area_ target type. That means if the cleric is adjacent to any of its allies, the cleric will **always** heal a random one among them with _Healing Hands_ skill.
   - Characters' targets are updated at the beginning of the correspondent character's turn. It will always select the closest enemy as the target.
   - When there are no valid enemies or allies in range for a skill, the character will try to move. The pathfinding system checks any possible movements for the character (up, down, right, left) and filter them by the least distance to the target.
 
